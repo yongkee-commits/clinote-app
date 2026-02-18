@@ -76,8 +76,7 @@ async def kakao_callback(code: str = "", error: str = ""):
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         if token_resp.status_code != 200:
-            err_body = token_resp.text[:200]
-            return RedirectResponse(url=f"/?error=token_exchange_failed&detail={err_body}")
+            return RedirectResponse(url="/?error=token_exchange_failed")
 
         access_token = token_resp.json().get("access_token")
         if not access_token:
