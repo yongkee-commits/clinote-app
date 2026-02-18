@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from src.auth import create_session_token, require_auth
-from src.config import STATIC_DIR, KAKAO_CLIENT_ID, KAKAO_REDIRECT_URI
+from src.config import STATIC_DIR, KAKAO_CLIENT_ID, KAKAO_CLIENT_SECRET, KAKAO_REDIRECT_URI
 from src.database import (
     init_db,
     upsert_user, get_user, create_session, delete_session, delete_expired_sessions,
@@ -62,14 +62,17 @@ async def kakao_callback(code: str = "", error: str = ""):
 
     async with httpx.AsyncClient(timeout=15.0) as client:
         # 1. 코드 → 액세스 토큰
+        token_data: dict = {
+            "grant_type": "authorization_code",
+            "client_id": KAKAO_CLIENT_ID,
+            "redirect_uri": KAKAO_REDIRECT_URI,
+            "code": code,
+        }
+        if KAKAO_CLIENT_SECRET:
+            token_data["client_secret"] = KAKAO_CLIENT_SECRET
         token_resp = await client.post(
             KAKAO_TOKEN_URL,
-            data={
-                "grant_type": "authorization_code",
-                "client_id": KAKAO_CLIENT_ID,
-                "redirect_uri": KAKAO_REDIRECT_URI,
-                "code": code,
-            },
+            data=token_data,
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         if token_resp.status_code != 200:

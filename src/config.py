@@ -18,6 +18,7 @@ TOKEN_EXPIRE = 60 * 60 * 24 * 30  # 30일
 
 # Kakao OAuth
 KAKAO_CLIENT_ID = os.getenv("KAKAO_CLIENT_ID", "")
+KAKAO_CLIENT_SECRET = os.getenv("KAKAO_CLIENT_SECRET", "")
 KAKAO_REDIRECT_URI = os.getenv(
     "KAKAO_REDIRECT_URI",
     "http://localhost:8003/api/auth/kakao/callback",
