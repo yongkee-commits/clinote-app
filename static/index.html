@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Clinote">
+<meta name="theme-color" content="#10b981">
+<link rel="manifest" href="/static/manifest.json">
+<title>Clinote</title>
+<style>
+/* ══ Theme variables ══════════════════════════════════ */
+:root {
+  --accent: #10b981;
+  --accent2: #059669;
+  --red: #ef4444;
+  --yellow: #f59e0b;
+  --radius: 14px;
+}
+[data-theme="dark"] {
+  --bg: #080c0b;
+  --card: #0e1512;
+  --card2: #151f1b;
+  --border: #1f2e28;
+  --text: #e8f5f0;
+  --text2: #7da394;
+  --shadow: 0 4px 24px rgba(0,0,0,0.5);
+  --chip-bg: #1a2e28;
+  --chip-text: #7da394;
+}
+[data-theme="light"] {
+  --bg: #f2f8f5;
+  --card: #ffffff;
+  --card2: #e8f5ef;
+  --border: #c0ddd3;
+  --text: #0d2b20;
+  --text2: #4a7a65;
+  --shadow: 0 4px 24px rgba(0,0,0,0.1);
+  --chip-bg: #dff0e9;
+  --chip-text: #3a6b58;
+}
+
+/* ══ Reset & Base ════════════════════════════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.2s, color 0.2s;
+}
+.screen { display: none; flex: 1; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ══ Header ══════════════════════════════════════════ */
+.header {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  position: sticky; top: 0; z-index: 10;
+  transition: background 0.2s, border-color 0.2s;
+}
+.header h1 { font-size: 18px; font-weight: 700; color: var(--accent); flex: 1; }
+.header .subtitle { font-size: 12px; color: var(--text2); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ══ Theme toggle ════════════════════════════════════ */
+.theme-btn {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.theme-btn:active { opacity: 0.7; }
+
+/* ══ Bottom Nav ══════════════════════════════════════ */
+.bottom-nav {
+  display: none;
+  position: sticky; bottom: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+  transition: background 0.2s, border-color 0.2s;
+}
+.bottom-nav.visible { display: flex; }
+.nav-btn {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text2); font-size: 10px; padding: 6px 0;
+  transition: color 0.15s;
+}
+.nav-btn svg { width: 20px; height: 20px; }
+.nav-btn.active { color: var(--accent); }
+
+/* ══ Scroll area ════════════════════════════════════ */
+.scroll-area { flex: 1; overflow-y: auto; padding: 18px 16px; }
+
+/* ══ Forms ══════════════════════════════════════════ */
+label {
+  display: block; font-size: 11px; color: var(--text2);
+  margin-bottom: 6px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.6px;
+}
+input, textarea, select {
+  width: 100%;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 15px;
+  padding: 11px 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s, background 0.2s;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+textarea { resize: vertical; min-height: 80px; }
+.form-group { margin-bottom: 18px; }
+
+/* ══ Buttons ════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 12px 18px; border-radius: 12px; border: none;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  font-family: inherit;
+}
+.btn:active { transform: scale(0.97); opacity: 0.85; }
+.btn-primary { background: var(--accent); color: #fff; width: 100%; }
+.btn-secondary { background: var(--card2); color: var(--text); border: 1px solid var(--border); }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-sm { padding: 7px 13px; font-size: 13px; border-radius: 9px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ══ Chips (predefined options) ═════════════════════ */
+.chip-label {
+  font-size: 11px; color: var(--text2);
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+  margin-bottom: 8px; margin-top: 4px;
+}
+.chip-group { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.chip {
+  padding: 6px 12px; border-radius: 20px; font-size: 13px;
+  background: var(--chip-bg); border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.15s;
+  color: var(--chip-text); font-weight: 500; line-height: 1.2;
+  user-select: none;
+}
+.chip:active { transform: scale(0.95); }
+.chip.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+.chip-section-title { font-size: 11px; color: var(--text2); margin: 8px 0 4px; font-weight: 600; width: 100%; }
+
+/* ══ Tags (added items) ════════════════════════════ */
+.tags-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 8px; }
+.tag {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4);
+  border-radius: 20px; padding: 4px 10px; font-size: 13px; color: var(--accent);
+}
+.tag-remove { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; opacity: 0.7; }
+.add-tag-row { display: flex; gap: 8px; margin-top: 8px; }
+.add-tag-row input { flex: 1; }
+
+/* Forbidden tags (different color) */
+.forbidden-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ftag {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 20px; padding: 4px 10px; font-size: 13px; color: var(--red);
+}
+.ftag-remove { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; opacity: 0.7; }
+
+/* ══ Stars ══════════════════════════════════════════ */
+.stars { display: flex; gap: 6px; }
+.star-btn { background: none; border: none; cursor: pointer; font-size: 26px; color: var(--border); transition: color 0.1s; line-height: 1; }
+.star-btn.active { color: var(--yellow); }
+
+/* ══ Platform tabs ══════════════════════════════════ */
+.platform-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.platform-tab {
+  flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--card2); color: var(--text2); font-size: 13px; font-weight: 600;
+  cursor: pointer; text-align: center; transition: all 0.15s;
+}
+.platform-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ══ Reply output ════════════════════════════════════ */
+.reply-output {
+  background: var(--card2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 16px;
+  font-size: 15px; line-height: 1.75;
+  min-height: 80px;
+  white-space: pre-wrap; word-break: break-word;
+  transition: background 0.2s;
+}
+.reply-output.empty { color: var(--text2); font-style: italic; border-color: var(--border); }
+.copy-row { display: flex; gap: 8px; margin-top: 10px; }
+
+/* ══ History ════════════════════════════════════════ */
+.history-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px; margin-bottom: 10px;
+  transition: background 0.2s;
+}
+.history-card .meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.platform-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--card2); color: var(--text2); text-transform: uppercase; }
+.rating-stars { color: var(--yellow); font-size: 13px; }
+.history-date { font-size: 11px; color: var(--text2); margin-left: auto; }
+.history-review { font-size: 13px; color: var(--text2); margin-bottom: 8px; border-left: 2px solid var(--border); padding-left: 10px; line-height: 1.5; }
+.history-reply { font-size: 14px; line-height: 1.65; }
+.history-actions { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
+
+/* ══ Char count ═════════════════════════════════════ */
+.char-count { font-size: 11px; color: var(--text2); text-align: right; margin-top: 4px; }
+.char-count.warn { color: var(--yellow); }
+
+/* ══ Login ══════════════════════════════════════════ */
+.login-wrap {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  flex: 1; padding: 40px 24px;
+}
+.login-logo { font-size: 40px; font-weight: 800; color: var(--accent); margin-bottom: 6px; letter-spacing: -1px; }
+.login-tagline { font-size: 14px; color: var(--text2); margin-bottom: 44px; text-align: center; line-height: 1.6; }
+.login-form { width: 100%; max-width: 360px; }
+.login-form input { font-size: 16px; padding: 14px; text-align: center; letter-spacing: 2px; }
+.login-theme-btn { display: flex; align-items: center; justify-content: center; gap: 6px; background: none; border: none; color: var(--text2); font-size: 13px; cursor: pointer; margin: 20px auto 0; padding: 8px; }
+.error-msg { color: var(--red); font-size: 13px; text-align: center; margin-top: 10px; min-height: 20px; }
+
+/* ══ Spinner ════════════════════════════════════════ */
+.spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ══ Toast ══════════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--accent); color: #fff; padding: 10px 20px; border-radius: 20px;
+  font-size: 14px; font-weight: 600; opacity: 0; transition: all 0.25s; pointer-events: none;
+  white-space: nowrap; z-index: 9999;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ══ Section title ══════════════════════════════════ */
+.section-title { font-size: 12px; color: var(--text2); font-weight: 700; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.settings-header { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.6; }
+.empty-state { text-align: center; color: var(--text2); padding: 40px 20px; font-size: 14px; }
+.empty-state .emoji { font-size: 40px; margin-bottom: 12px; }
+.divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+/* ══ Template grid ══════════════════════════════════ */
+.tmpl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.tmpl-card {
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 10px;
+  cursor: pointer; text-align: center; transition: all 0.15s;
+}
+.tmpl-card:active { transform: scale(0.97); }
+.tmpl-card.selected { border-color: var(--accent); background: rgba(16,185,129,0.12); }
+.tmpl-card .tmpl-icon { font-size: 26px; margin-bottom: 6px; }
+.tmpl-card .tmpl-name { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.tmpl-card .tmpl-desc { font-size: 11px; color: var(--text2); margin-top: 3px; }
+
+#tmpl-params { display: none; }
+#tmpl-params.visible { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ LOGIN ══════════════════════════════════ -->
+<div id="screen-login" class="screen active">
+  <div class="login-wrap">
+    <div class="login-logo">Clinote</div>
+    <div class="login-tagline">치과 원장님을 위한<br>AI 리뷰 답변 파트너</div>
+    <div class="login-form">
+      <div class="form-group">
+        <input type="password" id="login-pw" placeholder="비밀번호 입력" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">
+        <span id="login-btn-text">로그인</span>
+      </button>
+      <div class="error-msg" id="login-error"></div>
+    </div>
+    <button class="login-theme-btn" onclick="toggleTheme()">
+      <span id="login-theme-icon">☀️</span>
+      <span id="login-theme-label">라이트 모드</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ REPLY ══════════════════════════════════ -->
+<div id="screen-reply" class="screen">
+  <div class="header">
+    <h1>Clinote</h1>
+    <span class="subtitle" id="clinic-name-header"></span>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn-reply">🌙</button>
+  </div>
+  <div class="scroll-area">
+    <div class="form-group">
+      <label>플랫폼</label>
+      <div class="platform-tabs">
+        <div class="platform-tab active" data-platform="naver" onclick="selectPlatform('naver')">네이버</div>
+        <div class="platform-tab" data-platform="kakao" onclick="selectPlatform('kakao')">카카오</div>
+        <div class="platform-tab" data-platform="google" onclick="selectPlatform('google')">구글</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>별점 (선택)</label>
+      <div class="stars" id="stars-container">
+        <button class="star-btn" data-n="1" onclick="selectRating(1)">★</button>
+        <button class="star-btn" data-n="2" onclick="selectRating(2)">★</button>
+        <button class="star-btn" data-n="3" onclick="selectRating(3)">★</button>
+        <button class="star-btn" data-n="4" onclick="selectRating(4)">★</button>
+        <button class="star-btn" data-n="5" onclick="selectRating(5)">★</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>리뷰 내용</label>
+      <textarea id="review-input" placeholder="네이버/카카오에서 리뷰를 복사해서 붙여넣으세요..." rows="5" oninput="onReviewInput()"></textarea>
+      <div class="char-count" id="review-char">0자</div>
+    </div>
+
+    <button class="btn btn-primary" id="generate-btn" onclick="generateReply()" disabled>
+      <span id="generate-btn-content">답변 생성</span>
+    </button>
+
+    <div style="margin-top: 20px;">
+      <div class="section-title">생성된 답변</div>
+      <div class="reply-output empty" id="reply-output">답변이 여기에 표시됩니다</div>
+      <div class="char-count" id="reply-char"></div>
+      <div class="copy-row" id="copy-row" style="display:none">
+        <button class="btn btn-secondary btn-sm" onclick="copyReply()" style="flex:1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>복사
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="regenerateReply()" id="regen-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>재생성
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="resetForm()">초기화</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TEMPLATE ════════════════════════════════ -->
+<div id="screen-template" class="screen">
+  <div class="header">
+    <h1>문자·공지</h1>
+    <span class="subtitle" id="tmpl-clinic-header"></span>
+    <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+  </div>
+  <div class="scroll-area">
+    <p class="settings-header">환자 안내문, 공지, SNS 캡션을 AI로 빠르게 생성하세요.</p>
+    <div class="section-title">유형 선택</div>
+    <div class="tmpl-grid">
+      <div class="tmpl-card" data-type="first_visit" onclick="selectTemplate('first_visit')">
+        <div class="tmpl-icon">🏥</div>
+        <div class="tmpl-name">초진 안내 문자</div>
+        <div class="tmpl-desc">첫 방문 환자 안내</div>
+      </div>
+      <div class="tmpl-card" data-type="after_care" onclick="selectTemplate('after_care')">
+        <div class="tmpl-icon">💊</div>
+        <div class="tmpl-name">치료 후 주의사항</div>
+        <div class="tmpl-desc">시술 후 주의사항</div>
+      </div>
+      <div class="tmpl-card" data-type="recall" onclick="selectTemplate('recall')">
+        <div class="tmpl-icon">📅</div>
+        <div class="tmpl-name">재내원 유도 문자</div>
+        <div class="tmpl-desc">정기 내원 안내</div>
+      </div>
+      <div class="tmpl-card" data-type="noshow" onclick="selectTemplate('noshow')">
+        <div class="tmpl-icon">⏰</div>
+        <div class="tmpl-name">노쇼 방지 리마인더</div>
+        <div class="tmpl-desc">예약 알림 문자</div>
+      </div>
+      <div class="tmpl-card" data-type="holiday" onclick="selectTemplate('holiday')">
+        <div class="tmpl-icon">🔔</div>
+        <div class="tmpl-name">휴진 공지</div>
+        <div class="tmpl-desc">카카오/문자/인스타</div>
+      </div>
+      <div class="tmpl-card" data-type="sns" onclick="selectTemplate('sns')">
+        <div class="tmpl-icon">📱</div>
+        <div class="tmpl-name">SNS 캡션</div>
+        <div class="tmpl-desc">인스타/블로그</div>
+      </div>
+    </div>
+
+    <div id="tmpl-params">
+      <div class="divider"></div>
+      <div id="tmpl-fields"></div>
+      <button class="btn btn-primary" id="tmpl-generate-btn" onclick="generateTemplate()">
+        <span id="tmpl-generate-text">생성하기</span>
+      </button>
+      <div style="margin-top: 20px;">
+        <div class="section-title">생성된 내용</div>
+        <div class="reply-output empty" id="tmpl-output">내용이 여기에 표시됩니다</div>
+        <div class="char-count" id="tmpl-char"></div>
+        <div class="copy-row" id="tmpl-copy-row" style="display:none">
+          <button class="btn btn-secondary btn-sm" onclick="copyTmpl()" style="flex:1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>복사
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="regenTemplate()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>재생성
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ HISTORY ═════════════════════════════════ -->
+<div id="screen-history" class="screen">
+  <div class="header">
+    <h1>답변 이력</h1>
+    <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+  </div>
+  <div class="scroll-area" id="history-list">
+    <div class="empty-state"><div class="emoji">📋</div>이력이 없습니다</div>
+  </div>
+</div>
+
+<!-- ══════════ SETTINGS ════════════════════════════════ -->
+<div id="screen-settings" class="screen">
+  <div class="header">
+    <h1>병원 설정</h1>
+    <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+  </div>
+  <div class="scroll-area">
+    <p class="settings-header">병원 정보를 입력하면 AI가 맞춤형 답변을 생성합니다.</p>
+
+    <div class="form-group">
+      <label>병원명 *</label>
+      <input type="text" id="s-name" placeholder="예: 서울스마일치과">
+    </div>
+
+    <div class="form-group">
+      <label>진료과목</label>
+      <select id="s-specialty" onchange="onSpecialtyChange()">
+        <option value="치과">치과</option>
+        <option value="한의원">한의원</option>
+        <option value="피부과">피부과</option>
+        <option value="성형외과">성형외과</option>
+        <option value="안과">안과</option>
+        <option value="이비인후과">이비인후과</option>
+        <option value="정형외과">정형외과</option>
+        <option value="내과">내과</option>
+        <option value="동물병원">동물병원</option>
+        <option value="기타">기타</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>원장님 성함 (선택)</label>
+      <input type="text" id="s-doctor" placeholder="예: 김민준">
+    </div>
+
+    <div class="form-group">
+      <label>답변 말투</label>
+      <select id="s-tone">
+        <option value="formal">정중하고 공식적인 말투</option>
+        <option value="friendly">친근하고 따뜻한 말투</option>
+        <option value="professional">전문적이고 신뢰감 있는 말투</option>
+      </select>
+    </div>
+
+    <!-- 강조사항: 칩 선택 + 커스텀 -->
+    <div class="form-group">
+      <label>강조 사항</label>
+      <div class="chip-label">자주 쓰는 항목 탭해서 추가</div>
+      <div class="chip-group" id="emphasis-chips"></div>
+      <div class="add-tag-row">
+        <input type="text" id="s-emphasis-input" placeholder="직접 입력 후 추가" onkeydown="if(event.key==='Enter'){addEmphasis();event.preventDefault();}">
+        <button class="btn btn-secondary btn-sm" onclick="addEmphasis()">추가</button>
+      </div>
+      <div class="tags-wrap" id="emphasis-tags"></div>
+    </div>
+
+    <!-- 금지어 -->
+    <div class="form-group">
+      <label>금지어</label>
+      <div class="chip-label">자주 쓰는 금지어 예시</div>
+      <div class="chip-group">
+        <div class="chip" onclick="addForbiddenChip('최고')">최고</div>
+        <div class="chip" onclick="addForbiddenChip('1등')">1등</div>
+        <div class="chip" onclick="addForbiddenChip('전국 최초')">전국 최초</div>
+        <div class="chip" onclick="addForbiddenChip('완치')">완치</div>
+        <div class="chip" onclick="addForbiddenChip('보장')">보장</div>
+        <div class="chip" onclick="addForbiddenChip('100%')">100%</div>
+        <div class="chip" onclick="addForbiddenChip('무조건')">무조건</div>
+        <div class="chip" onclick="addForbiddenChip('특효')">특효</div>
+      </div>
+      <div class="add-tag-row">
+        <input type="text" id="s-forbidden-input" placeholder="금지어 입력 후 추가" onkeydown="if(event.key==='Enter'){addForbiddenWord();event.preventDefault();}">
+        <button class="btn btn-secondary btn-sm" onclick="addForbiddenWord()">추가</button>
+      </div>
+      <div class="forbidden-tags" id="forbidden-tags"></div>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveSettings()">
+      <span id="settings-btn-text">설정 저장</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ BOTTOM NAV ══════════════════════════════ -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="nav-btn active" id="nav-reply" onclick="showScreen('reply')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    리뷰 답변
+  </button>
+  <button class="nav-btn" id="nav-template" onclick="showScreen('template')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    문자·공지
+  </button>
+  <button class="nav-btn" id="nav-history" onclick="showScreen('history')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    이력
+  </button>
+  <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    설정
+  </button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+// ══ Data ══════════════════════════════════════════════════
+const SPECIALTY_EMPHASIS = {
+  '치과': [
+    '무통 마취', '임플란트 전문', '어린이 치과', '당일 응급진료',
+    '투명교정(인비절라인)', '세라믹 교정', '라미네이트', '잇몸 치료',
+    '당일 임플란트', '디지털 구강스캐너', '수면 진료', '치아미백',
+    '틀니·보철 전문', '사랑니 당일 발치', '전문의 상주', '턱관절 치료',
+    '치아 성형', '레진 수복', '의료보험 적용',
+  ],
+  '한의원': [
+    '추나요법', '침 치료', '한약 처방', '다이어트 한의원',
+    '불임·난임 치료', '체질 분석', '디스크 치료', '갱년기 치료',
+    '소아 한의학', '스포츠 한의', '화병 치료', '피부 한의',
+    '야간 진료', '당일 한약 조제', '비급여 항목 투명 공개',
+  ],
+  '피부과': [
+    '레이저 치료', '보톡스', '필러', '피부 미백',
+    '여드름 치료', '아토피 전문', '리프팅', '색소 치료',
+    '실 리프팅', '모공 치료', '탈모 치료', '제모 레이저',
+    '흉터 치료', '피부 건강검진', '해외 브랜드 제품 사용',
+  ],
+  '성형외과': [
+    '자연스러운 결과', '쌍꺼풀 전문', '코 성형', '지방흡입',
+    '눈 성형', '안면윤곽', '수정·재수술 전문', '무흉터 기법',
+    '가슴 성형', '바디 컨투어링', '외국인 환자 경험 풍부',
+  ],
+  '안과': [
+    '라식·라섹 전문', '스마일 라식', '백내장 수술',
+    '망막 전문', '녹내장 치료', '드림렌즈', '노안 교정',
+    '소아 안과', '의료용 콘택트렌즈', '3D 안저 촬영',
+  ],
+  '이비인후과': [
+    '코 수술·기능 교정', '편도 수술', '중이염 치료',
+    '수면무호흡', '알레르기 치료', '보청기 상담', '후두·음성 치료',
+    '구내염·편도염', '비염 치료', '청각 검사',
+  ],
+  '정형외과': [
+    '관절 내시경', '척추 전문', '스포츠 손상', '인공관절',
+    '도수치료', '체외충격파', '재활치료', '주사 치료',
+    '골절·외상', 'MRI 즉시 판독',
+  ],
+  '내과': [
+    '건강검진', '당뇨 전문', '고혈압 관리', '소화기 전문',
+    '갑상선 치료', '간 질환', '금연 클리닉', '영양 수액',
+    '수면 내시경', '대장 내시경', '위 내시경',
+  ],
+  '동물병원': [
+    '24시간 응급', '내과 전문', '외과 수술', '치과 스케일링',
+    '예방접종', '피부 전문', '안과 전문', '영양 상담',
+    '고양이 전문', '강아지 전문', '희귀 동물 진료', '입원실 운영',
+    '모바일 X-ray', '심장 초음파',
+  ],
+  '기타': [
+    '전문의 상주', '당일 진료', '예약제 운영', '주차 가능',
+    '야간 진료', '토·일 진료', '친절한 상담', '청결한 환경',
+    '비급여 항목 투명 공개', '외국어 가능',
+  ],
+};
+
+const TEMPLATES = {
+  first_visit: {
+    label: '초진 안내 문자',
+    fields: [
+      {
+        id: 'appt_date', label: '예약 날짜·시간', required: true,
+        placeholder: '직접 입력하거나 아래 예시 탭',
+        chips: ['내일 오전 10시', '내일 오후 2시', '이번 주 토요일 오전', '다음 주 월요일'],
+      },
+      {
+        id: 'note', label: '추가 안내 (선택)', required: false, textarea: true,
+        placeholder: '직접 입력하거나 아래 예시 탭',
+        chips: ['주차 가능', '대중교통 이용 권장', '접수 5분 전 도착 권장', '신분증 지참 요청', '보호자 동반 권장'],
+      },
+    ]
+  },
+  after_care: {
+    label: '치료 후 주의사항',
+    fields: [
+      {
+        id: 'treatment', label: '치료 항목', required: true,
+        placeholder: '직접 입력하거나 아래 탭',
+        chips: {
+          '치과': ['임플란트 수술', '스케일링', '신경치료', '발치', '보철 장착', '교정 장치 부착', '치아미백', '잇몸 치료', '라미네이트', '레진 수복'],
+          '피부과': ['레이저 시술', '보톡스', '필러', '박피', '리프팅', '제모'],
+          '정형외과': ['관절 내시경', '주사 치료', '도수치료', '체외충격파'],
+          '한의원': ['침 치료', '뜸 치료', '추나요법', '한약 복용 시작'],
+          default: ['수술', '시술', '주사 치료', '레이저 치료', '처치'],
+        },
+      },
+      {
+        id: 'note', label: '추가 안내 (선택)', required: false, textarea: true,
+        placeholder: '직접 입력하거나 아래 탭',
+        chips: ['항생제 처방됨', '진통제 처방됨', '3일 후 재내원 필요', '1주일 후 실밥 제거', '냉찜질 권장', '음주·흡연 금지 1주', '격한 운동 금지'],
+      },
+    ]
+  },
+  recall: {
+    label: '재내원 유도 문자',
+    fields: [
+      {
+        id: 'interval', label: '권장 내원 주기', required: true,
+        placeholder: '직접 입력하거나 아래 탭',
+        chips: ['3개월', '6개월', '1년', '2년', '매월'],
+      },
+      {
+        id: 'service', label: '권장 서비스', required: true,
+        placeholder: '직접 입력하거나 아래 탭',
+        chips: {
+          '치과': ['스케일링', '정기 검진', '불소 도포', '실란트', '교정 점검', '임플란트 점검', '구강 위생 관리'],
+          '안과': ['시력 검사', '안압 검사', '드림렌즈 점검'],
+          '내과': ['혈액 검사', '혈압 측정', '혈당 측정', '건강검진'],
+          default: ['정기 검진', '추적 관찰', '치료 후 점검'],
+        },
+      },
+    ]
+  },
+  noshow: {
+    label: '노쇼 방지 리마인더',
+    fields: [
+      {
+        id: 'appt_date', label: '예약 날짜·시간', required: true,
+        placeholder: '직접 입력하거나 아래 탭',
+        chips: ['내일 오전 10시', '내일 오후 2시', '내일 오후 4시', '모레 오전 11시'],
+      },
+      {
+        id: 'treatment', label: '예약 진료 (선택)', required: false,
+        placeholder: '직접 입력하거나 아래 탭',
+        chips: {
+          '치과': ['임플란트 상담', '스케일링', '신경치료', '보철 점검', '교정 점검', '발치'],
+          default: ['상담', '정기 검진', '처치', '수술 전 검사'],
+        },
+      },
+    ]
+  },
+  holiday: {
+    label: '휴진 공지',
+    fields: [
+      {
+        id: 'date_range', label: '휴진 기간', required: true,
+        placeholder: '예: 3월 1일(토)~3일(월)',
+        chips: [],
+      },
+      {
+        id: 'reason', label: '사유 (선택)', required: false,
+        placeholder: '직접 입력하거나 아래 탭',
+        chips: ['설 연휴', '추석 연휴', '학회 참석', '병원 리모델링', '원장님 부재', '공휴일'],
+      },
+      {
+        id: 'resume_date', label: '정상 진료 재개일', required: true,
+        placeholder: '예: 3월 4일(화)부터 정상 진료',
+        chips: [],
+      },
+      {
+        id: 'channel', label: '채널 (선택)', required: false,
+        placeholder: '직접 입력하거나 아래 탭',
+        chips: ['카카오', '문자', '인스타그램', '네이버 블로그'],
+      },
+    ]
+  },
+  sns: {
+    label: 'SNS 캡션',
+    fields: [
+      {
+        id: 'topic', label: '주제', required: true,
+        placeholder: '직접 입력하거나 아래 탭',
+        chips: {
+          '치과': ['임플란트 이벤트', '스케일링 안내', '투명교정 상담', '치아미백 이벤트', '어린이날 이벤트', '계절 인사'],
+          '피부과': ['보톡스 이벤트', '여드름 치료', '레이저 리프팅', '가을 피부관리'],
+          default: ['신규 장비 도입', '이벤트 안내', '계절 인사', '건강 정보', '원장님 소개'],
+        },
+      },
+      {
+        id: 'platform', label: 'SNS 채널', required: true,
+        placeholder: '직접 입력하거나 아래 탭',
+        chips: ['인스타그램', '네이버 블로그', '카카오스토리', '유튜브 쇼츠'],
+      },
+      {
+        id: 'note', label: '추가 요청 (선택)', required: false, textarea: true,
+        placeholder: '직접 입력하거나 아래 탭',
+        chips: ['해시태그 포함', '이모지 사용', '친근한 톤', '전문적인 톤', '짧고 임팩트 있게', '스토리텔링 형식'],
+      },
+    ]
+  },
+};
+
+// ══ State ══════════════════════════════════════════════
+let token = localStorage.getItem('clinote_token') || '';
+let currentScreen = 'login';
+let selectedPlatform = 'naver';
+let selectedRating = null;
+let currentReplyText = '';
+let lastReviewText = '';
+let lastRating = null;
+let selectedTmplType = null;
+let currentTmplText = '';
+let emphasisList = [];
+let forbiddenWords = [];
+let currentSpecialty = '치과';
+
+// ══ Theme ══════════════════════════════════════════════
+function initTheme() {
+  const saved = localStorage.getItem('clinote_theme') || 'dark';
+  setTheme(saved);
+}
+
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('clinote_theme', theme);
+  const isDark = theme === 'dark';
+  const icon = isDark ? '☀️' : '🌙';
+  const label = isDark ? '라이트 모드' : '다크 모드';
+  document.querySelectorAll('.theme-btn').forEach(b => b.textContent = icon);
+  const li = document.getElementById('login-theme-icon');
+  const ll = document.getElementById('login-theme-label');
+  if (li) li.textContent = icon;
+  if (ll) ll.textContent = label;
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  setTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+// ══ Utilities ══════════════════════════════════════════
+async function api(method, path, body = null) {
+  const opts = { method, headers: { 'Authorization': `Bearer ${token}` } };
+  if (body !== null) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const r = await fetch(path, opts);
+  if (r.status === 401) {
+    localStorage.removeItem('clinote_token');
+    token = '';
+    showScreen('login');
+    throw new Error('세션이 만료되었습니다.');
+  }
+  if (!r.ok) {
+    const text = await r.text();
+    let msg = text;
+    try { msg = JSON.parse(text).detail || text; } catch {}
+    throw new Error(msg);
+  }
+  return r.json();
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${name}`).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const nb = document.getElementById(`nav-${name}`);
+  if (nb) nb.classList.add('active');
+  currentScreen = name;
+  if (name === 'history') loadHistory();
+  if (name === 'settings') loadSettings();
+  if (name === 'template') loadTmplClinicHeader();
+}
+
+// ══ Auth ═══════════════════════════════════════════════
+async function doLogin() {
+  const pw = document.getElementById('login-pw').value;
+  const errEl = document.getElementById('login-error');
+  const btnText = document.getElementById('login-btn-text');
+  errEl.textContent = '';
+  btnText.textContent = '로그인 중...';
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw }),
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      throw new Error(d.detail || '비밀번호가 올바르지 않습니다');
+    }
+    const { token: t } = await r.json();
+    token = t;
+    localStorage.setItem('clinote_token', t);
+    afterLogin();
+  } catch (e) {
+    errEl.textContent = e.message;
+  } finally {
+    btnText.textContent = '로그인';
+  }
+}
+
+async function afterLogin() {
+  document.getElementById('bottom-nav').classList.add('visible');
+  showScreen('reply');
+  try {
+    const clinic = await api('GET', '/api/clinic');
+    updateClinicHeader(clinic);
+    if (!clinic.name) showScreen('settings');
+  } catch {}
+}
+
+function updateClinicHeader(clinic) {
+  const name = clinic.name ? `${clinic.name} ${clinic.specialty}` : '';
+  document.getElementById('clinic-name-header').textContent = name;
+}
+
+async function loadTmplClinicHeader() {
+  try {
+    const clinic = await api('GET', '/api/clinic');
+    const el = document.getElementById('tmpl-clinic-header');
+    if (el) el.textContent = clinic.name ? `${clinic.name}` : '';
+  } catch {}
+}
+
+// ══ Reply screen ════════════════════════════════════════
+function selectPlatform(p) {
+  selectedPlatform = p;
+  document.querySelectorAll('.platform-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.platform === p);
+  });
+}
+
+function selectRating(n) {
+  if (selectedRating === n) {
+    selectedRating = null;
+    document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+    return;
+  }
+  selectedRating = n;
+  document.querySelectorAll('.star-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.n) <= n);
+  });
+}
+
+function onReviewInput() {
+  const val = document.getElementById('review-input').value;
+  document.getElementById('generate-btn').disabled = val.trim().length < 5;
+  const cc = document.getElementById('review-char');
+  cc.textContent = `${val.length}자`;
+  cc.className = 'char-count' + (val.length > 500 ? ' warn' : '');
+}
+
+async function generateReply() {
+  const reviewText = document.getElementById('review-input').value.trim();
+  if (!reviewText) return;
+  lastReviewText = reviewText;
+  lastRating = selectedRating;
+  await _doGenerateReply(reviewText, selectedRating);
+}
+
+async function regenerateReply() {
+  if (!lastReviewText) return;
+  await _doGenerateReply(lastReviewText, lastRating);
+}
+
+async function _doGenerateReply(reviewText, rating) {
+  const btn = document.getElementById('generate-btn');
+  const btnContent = document.getElementById('generate-btn-content');
+  const regenBtn = document.getElementById('regen-btn');
+  const outputEl = document.getElementById('reply-output');
+  const copyRow = document.getElementById('copy-row');
+  const replyChar = document.getElementById('reply-char');
+
+  btn.disabled = true;
+  if (regenBtn) regenBtn.disabled = true;
+  btnContent.innerHTML = '<div class="spinner"></div> 생성 중...';
+  outputEl.textContent = '';
+  outputEl.classList.remove('empty');
+  copyRow.style.display = 'none';
+  currentReplyText = '';
+
+  try {
+    const r = await fetch('/api/review/generate', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ platform: selectedPlatform, rating, original_text: reviewText }),
+    });
+    if (!r.ok) throw new Error('생성 실패');
+    await _readStream(r, chunk => {
+      currentReplyText += chunk;
+      outputEl.textContent = currentReplyText;
+      replyChar.textContent = `${currentReplyText.length}자`;
+    }, () => {
+      copyRow.style.display = 'flex';
+    }, err => {
+      outputEl.textContent = '오류: ' + err;
+      outputEl.classList.add('empty');
+    });
+  } catch (e) {
+    outputEl.textContent = '오류: ' + e.message;
+    outputEl.classList.add('empty');
+  } finally {
+    btn.disabled = false;
+    if (regenBtn) regenBtn.disabled = false;
+    btnContent.textContent = '답변 생성';
+    onReviewInput();
+  }
+}
+
+function copyReply() {
+  if (!currentReplyText) return;
+  navigator.clipboard.writeText(currentReplyText).then(() => toast('답변이 복사되었습니다 ✓'));
+}
+
+function resetForm() {
+  document.getElementById('review-input').value = '';
+  document.getElementById('reply-output').textContent = '답변이 여기에 표시됩니다';
+  document.getElementById('reply-output').classList.add('empty');
+  document.getElementById('copy-row').style.display = 'none';
+  document.getElementById('reply-char').textContent = '';
+  document.getElementById('review-char').textContent = '0자';
+  selectedRating = null;
+  lastReviewText = '';
+  lastRating = null;
+  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+  currentReplyText = '';
+  onReviewInput();
+}
+
+// ══ SSE stream helper ═══════════════════════════════════
+async function _readStream(response, onChunk, onDone, onError) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      try {
+        const d = JSON.parse(line.slice(6));
+        if (d.chunk) onChunk(d.chunk);
+        if (d.done) onDone();
+        if (d.error) onError(d.error);
+      } catch {}
+    }
+  }
+}
+
+// ══ Template screen ═════════════════════════════════════
+function selectTemplate(type) {
+  selectedTmplType = type;
+  document.querySelectorAll('.tmpl-card').forEach(c => c.classList.toggle('selected', c.dataset.type === type));
+
+  const tmpl = TEMPLATES[type];
+  if (!tmpl) return;
+
+  const fieldsEl = document.getElementById('tmpl-fields');
+  fieldsEl.innerHTML = tmpl.fields.map(f => {
+    // Resolve chips (specialty-aware)
+    let chips = f.chips;
+    if (chips && typeof chips === 'object' && !Array.isArray(chips)) {
+      chips = chips[currentSpecialty] || chips['default'] || [];
+    }
+    chips = chips || [];
+
+    const chipsHtml = chips.length ? `
+      <div class="chip-group">${chips.map(c => `<div class="chip" onclick="tmplChipClick(this,'tf-${f.id}')">${escapeHtml(c)}</div>`).join('')}</div>
+    ` : '';
+
+    const inputHtml = f.textarea
+      ? `<textarea id="tf-${f.id}" placeholder="${f.placeholder}" rows="3"></textarea>`
+      : `<input type="text" id="tf-${f.id}" placeholder="${f.placeholder}">`;
+
+    return `<div class="form-group">
+      <label>${f.label}${f.required ? ' *' : ''}</label>
+      ${chipsHtml}
+      ${inputHtml}
+    </div>`;
+  }).join('');
+
+  // Reset output
+  document.getElementById('tmpl-output').textContent = '내용이 여기에 표시됩니다';
+  document.getElementById('tmpl-output').classList.add('empty');
+  document.getElementById('tmpl-copy-row').style.display = 'none';
+  document.getElementById('tmpl-char').textContent = '';
+  currentTmplText = '';
+
+  const paramsEl = document.getElementById('tmpl-params');
+  paramsEl.classList.add('visible');
+  paramsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function tmplChipClick(chipEl, inputId) {
+  const inputEl = document.getElementById(inputId);
+  if (!inputEl) return;
+  const val = chipEl.textContent.trim();
+  const cur = inputEl.value.trim();
+  // Toggle: if already in input, remove; else append
+  if (cur.includes(val)) {
+    inputEl.value = cur.replace(val, '').replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, '').trim();
+    chipEl.classList.remove('selected');
+  } else {
+    inputEl.value = cur ? `${cur}, ${val}` : val;
+    chipEl.classList.add('selected');
+  }
+}
+
+async function generateTemplate() {
+  if (!selectedTmplType) return;
+  const tmpl = TEMPLATES[selectedTmplType];
+  const params = {};
+  let valid = true;
+  for (const f of tmpl.fields) {
+    const el = document.getElementById(`tf-${f.id}`);
+    const val = el ? el.value.trim() : '';
+    if (f.required && !val) {
+      el && el.focus();
+      toast(`${f.label}을(를) 입력해주세요`);
+      valid = false;
+      break;
+    }
+    params[f.id] = val;
+  }
+  if (!valid) return;
+  await _doGenerateTemplate(selectedTmplType, params);
+}
+
+async function regenTemplate() {
+  if (!selectedTmplType) return;
+  const tmpl = TEMPLATES[selectedTmplType];
+  const params = {};
+  for (const f of tmpl.fields) {
+    const el = document.getElementById(`tf-${f.id}`);
+    params[f.id] = el ? el.value.trim() : '';
+  }
+  await _doGenerateTemplate(selectedTmplType, params);
+}
+
+async function _doGenerateTemplate(type, params) {
+  const btn = document.getElementById('tmpl-generate-btn');
+  const btnText = document.getElementById('tmpl-generate-text');
+  const outputEl = document.getElementById('tmpl-output');
+  const copyRow = document.getElementById('tmpl-copy-row');
+  const charEl = document.getElementById('tmpl-char');
+
+  btn.disabled = true;
+  btnText.innerHTML = '<div class="spinner"></div> 생성 중...';
+  outputEl.textContent = '';
+  outputEl.classList.remove('empty');
+  copyRow.style.display = 'none';
+  currentTmplText = '';
+
+  try {
+    const r = await fetch('/api/template/generate', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ template_type: type, params }),
+    });
+    if (!r.ok) throw new Error('생성 실패');
+    await _readStream(r, chunk => {
+      currentTmplText += chunk;
+      outputEl.textContent = currentTmplText;
+      charEl.textContent = `${currentTmplText.length}자`;
+    }, () => {
+      copyRow.style.display = 'flex';
+    }, err => {
+      outputEl.textContent = '오류: ' + err;
+      outputEl.classList.add('empty');
+    });
+  } catch (e) {
+    outputEl.textContent = '오류: ' + e.message;
+    outputEl.classList.add('empty');
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = '생성하기';
+  }
+}
+
+function copyTmpl() {
+  if (!currentTmplText) return;
+  navigator.clipboard.writeText(currentTmplText).then(() => toast('복사되었습니다 ✓'));
+}
+
+// ══ History ════════════════════════════════════════════
+async function loadHistory() {
+  const listEl = document.getElementById('history-list');
+  listEl.innerHTML = '<div class="empty-state"><div class="emoji">⏳</div>불러오는 중...</div>';
+  try {
+    const { items } = await api('GET', '/api/reviews?limit=50');
+    if (!items.length) {
+      listEl.innerHTML = '<div class="empty-state"><div class="emoji">📋</div>아직 생성한 답변이 없습니다</div>';
+      return;
+    }
+    listEl.innerHTML = items.map(item => {
+      const stars = item.rating ? '★'.repeat(item.rating) + '☆'.repeat(5 - item.rating) : '';
+      const date = item.created_at ? item.created_at.substring(0, 16) : '';
+      const platformLabel = { naver: '네이버', kakao: '카카오', google: '구글' }[item.platform] || item.platform;
+      return `<div class="history-card">
+        <div class="meta">
+          <span class="platform-badge">${platformLabel}</span>
+          ${stars ? `<span class="rating-stars">${stars}</span>` : ''}
+          <span class="history-date">${date}</span>
+        </div>
+        <div class="history-review">${escapeHtml(item.original_text.substring(0, 100))}${item.original_text.length > 100 ? '...' : ''}</div>
+        <div class="history-reply">${escapeHtml(item.reply_text)}</div>
+        <div class="history-actions">
+          <button class="btn btn-secondary btn-sm" onclick="copyText(${JSON.stringify(item.reply_text)})">복사</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteReview(${item.id}, this)">삭제</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = `<div class="empty-state"><div class="emoji">❌</div>${e.message}</div>`;
+  }
+}
+
+async function deleteReview(id, btn) {
+  btn.disabled = true;
+  try {
+    await api('DELETE', `/api/reviews/${id}`);
+    btn.closest('.history-card').remove();
+    toast('삭제되었습니다');
+  } catch (e) {
+    toast('삭제 실패: ' + e.message);
+    btn.disabled = false;
+  }
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => toast('복사되었습니다 ✓'));
+}
+
+// ══ Settings ═══════════════════════════════════════════
+async function loadSettings() {
+  try {
+    const clinic = await api('GET', '/api/clinic');
+    document.getElementById('s-name').value = clinic.name || '';
+    document.getElementById('s-specialty').value = clinic.specialty || '치과';
+    document.getElementById('s-doctor').value = clinic.doctor_name || '';
+    document.getElementById('s-tone').value = clinic.tone || 'formal';
+    currentSpecialty = clinic.specialty || '치과';
+
+    // Parse emphasis string → list
+    const emphStr = clinic.emphasis || '';
+    emphasisList = emphStr ? emphStr.split(/,\s*/).filter(Boolean) : [];
+    renderEmphasisChips();
+    renderEmphasisTags();
+
+    forbiddenWords = Array.isArray(clinic.forbidden_words) ? [...clinic.forbidden_words] : [];
+    renderForbiddenTags();
+  } catch {}
+}
+
+function onSpecialtyChange() {
+  currentSpecialty = document.getElementById('s-specialty').value;
+  renderEmphasisChips();
+}
+
+function renderEmphasisChips() {
+  const opts = SPECIALTY_EMPHASIS[currentSpecialty] || SPECIALTY_EMPHASIS['기타'];
+  const el = document.getElementById('emphasis-chips');
+  el.innerHTML = opts.map(o => {
+    const selected = emphasisList.includes(o) ? ' selected' : '';
+    return `<div class="chip${selected}" onclick="toggleEmphasisChip(this, '${escapeHtml(o)}')">${escapeHtml(o)}</div>`;
+  }).join('');
+}
+
+function toggleEmphasisChip(chipEl, value) {
+  if (emphasisList.includes(value)) {
+    emphasisList = emphasisList.filter(v => v !== value);
+    chipEl.classList.remove('selected');
+  } else {
+    emphasisList.push(value);
+    chipEl.classList.add('selected');
+  }
+  renderEmphasisTags();
+}
+
+function renderEmphasisTags() {
+  const el = document.getElementById('emphasis-tags');
+  el.innerHTML = emphasisList.map((w, i) =>
+    `<div class="tag">${escapeHtml(w)}<button class="tag-remove" onclick="removeEmphasis(${i})">×</button></div>`
+  ).join('');
+}
+
+function addEmphasis() {
+  const input = document.getElementById('s-emphasis-input');
+  const word = input.value.trim();
+  if (!word || emphasisList.includes(word)) { input.value = ''; return; }
+  emphasisList.push(word);
+  input.value = '';
+  renderEmphasisTags();
+  // Sync chips if it matches
+  renderEmphasisChips();
+}
+
+function removeEmphasis(i) {
+  emphasisList.splice(i, 1);
+  renderEmphasisTags();
+  renderEmphasisChips();
+}
+
+function addForbiddenChip(word) {
+  if (!forbiddenWords.includes(word)) {
+    forbiddenWords.push(word);
+    renderForbiddenTags();
+  }
+}
+
+function addForbiddenWord() {
+  const input = document.getElementById('s-forbidden-input');
+  const word = input.value.trim();
+  if (!word || forbiddenWords.includes(word)) { input.value = ''; return; }
+  forbiddenWords.push(word);
+  input.value = '';
+  renderForbiddenTags();
+}
+
+function removeForbiddenWord(i) {
+  forbiddenWords.splice(i, 1);
+  renderForbiddenTags();
+}
+
+function renderForbiddenTags() {
+  const el = document.getElementById('forbidden-tags');
+  el.innerHTML = forbiddenWords.map((w, i) =>
+    `<div class="ftag">${escapeHtml(w)}<button class="ftag-remove" onclick="removeForbiddenWord(${i})">×</button></div>`
+  ).join('');
+}
+
+async function saveSettings() {
+  const name = document.getElementById('s-name').value.trim();
+  if (!name) { toast('병원명을 입력해주세요'); return; }
+  const btnText = document.getElementById('settings-btn-text');
+  btnText.textContent = '저장 중...';
+  try {
+    const clinic = await api('PUT', '/api/clinic', {
+      name,
+      specialty: document.getElementById('s-specialty').value,
+      doctor_name: document.getElementById('s-doctor').value.trim(),
+      tone: document.getElementById('s-tone').value,
+      forbidden_words: forbiddenWords,
+      emphasis: emphasisList.join(', '),
+    });
+    updateClinicHeader(clinic);
+    toast('설정이 저장되었습니다 ✓');
+    setTimeout(() => showScreen('reply'), 800);
+  } catch (e) {
+    toast('저장 실패: ' + e.message);
+  } finally {
+    btnText.textContent = '설정 저장';
+  }
+}
+
+// ══ Service Worker ══════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+  });
+}
+
+// ══ Init ═══════════════════════════════════════════════
+initTheme();
+document.getElementById('login-pw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+if (token) afterLogin();
+</script>
+</body>
+</html>
