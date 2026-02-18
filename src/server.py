@@ -1,14 +1,17 @@
 import json
+import httpx
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from src.auth import check_password, get_token, is_blocked, record_fail, require_auth
-from src.config import STATIC_DIR
+from src.auth import create_session_token, require_auth
+from src.config import STATIC_DIR, KAKAO_CLIENT_ID, KAKAO_REDIRECT_URI
 from src.database import (
-    init_db, get_clinic, save_clinic,
+    init_db,
+    upsert_user, get_user, create_session, delete_session, delete_expired_sessions,
+    get_clinic, save_clinic,
     create_review, update_review_reply,
     list_reviews, delete_review, count_reviews,
     create_template_record, update_template_output,
@@ -29,34 +32,99 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+KAKAO_AUTH_URL = "https://kauth.kakao.com/oauth/authorize"
+KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
+KAKAO_USER_URL = "https://kapi.kakao.com/v2/user/me"
+
 
 @app.on_event("startup")
 async def startup():
     init_db()
+    delete_expired_sessions()
 
 
-# ── Auth ──────────────────────────────────────────────────
+# ── Kakao OAuth ───────────────────────────────────────
 
-class LoginBody(BaseModel):
-    password: str
-
-
-@app.post("/api/login")
-async def api_login(body: LoginBody, request: Request):
-    if is_blocked(request):
-        raise HTTPException(status_code=429, detail="잠시 후 다시 시도하세요")
-    if not check_password(body.password):
-        record_fail(request)
-        raise HTTPException(status_code=401, detail="비밀번호가 올바르지 않습니다")
-    return {"token": get_token()}
+@app.get("/api/auth/kakao")
+async def kakao_login():
+    params = (
+        f"client_id={KAKAO_CLIENT_ID}"
+        f"&redirect_uri={KAKAO_REDIRECT_URI}"
+        f"&response_type=code"
+    )
+    return RedirectResponse(url=f"{KAKAO_AUTH_URL}?{params}")
 
 
-# ── Clinic settings ───────────────────────────────────────
+@app.get("/api/auth/kakao/callback")
+async def kakao_callback(code: str = "", error: str = ""):
+    if error or not code:
+        return RedirectResponse(url="/?error=kakao_auth_failed")
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        # 1. 코드 → 액세스 토큰
+        token_resp = await client.post(
+            KAKAO_TOKEN_URL,
+            data={
+                "grant_type": "authorization_code",
+                "client_id": KAKAO_CLIENT_ID,
+                "redirect_uri": KAKAO_REDIRECT_URI,
+                "code": code,
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        if token_resp.status_code != 200:
+            return RedirectResponse(url="/?error=token_exchange_failed")
+
+        access_token = token_resp.json().get("access_token")
+        if not access_token:
+            return RedirectResponse(url="/?error=no_access_token")
+
+        # 2. 유저 프로필 조회
+        user_resp = await client.get(
+            KAKAO_USER_URL,
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        if user_resp.status_code != 200:
+            return RedirectResponse(url="/?error=user_fetch_failed")
+
+        user_data = user_resp.json()
+
+    kakao_id = str(user_data["id"])
+    kakao_account = user_data.get("kakao_account", {})
+    profile = kakao_account.get("profile", user_data.get("properties", {}))
+    nickname = profile.get("nickname", "")
+    profile_image = profile.get("profile_image_url", profile.get("profile_image", ""))
+
+    # 3. 유저 upsert + 세션 발급
+    upsert_user(kakao_id, nickname, profile_image)
+    session_token, expires_at = create_session_token()
+    create_session(session_token, kakao_id, expires_at)
+
+    # 4. 프론트엔드로 토큰 전달
+    return RedirectResponse(url=f"/?token={session_token}")
+
+
+@app.post("/api/auth/logout")
+async def kakao_logout(request: Request, user_id: str = Depends(require_auth)):
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        delete_session(auth_header[7:])
+    return {"ok": True}
+
+
+@app.get("/api/me")
+async def api_me(user_id: str = Depends(require_auth)):
+    user = get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+# ── Clinic settings ───────────────────────────────────
 
 @app.get("/api/clinic")
-async def api_get_clinic(_=Depends(require_auth)):
-    clinic = get_clinic()
-    # API secret은 존재 여부만 반환 (값 노출 방지)
+async def api_get_clinic(user_id: str = Depends(require_auth)):
+    clinic = get_clinic(user_id)
     clinic["solapi_api_secret"] = "SET" if clinic.get("solapi_api_secret") else ""
     return clinic
 
@@ -73,13 +141,14 @@ class ClinicBody(BaseModel):
     instagram_url: str = ""
     kakao_channel: str = ""
     solapi_api_key: str = ""
-    solapi_api_secret: str | None = None  # None이면 기존 값 유지
+    solapi_api_secret: str | None = None
     solapi_sender: str = ""
 
 
 @app.put("/api/clinic")
-async def api_save_clinic(body: ClinicBody, _=Depends(require_auth)):
+async def api_save_clinic(body: ClinicBody, user_id: str = Depends(require_auth)):
     return save_clinic(
+        user_id=user_id,
         name=body.name,
         specialty=body.specialty,
         doctor_name=body.doctor_name,
@@ -91,12 +160,12 @@ async def api_save_clinic(body: ClinicBody, _=Depends(require_auth)):
         instagram_url=body.instagram_url,
         kakao_channel=body.kakao_channel,
         solapi_api_key=body.solapi_api_key,
-        solapi_api_secret=body.solapi_api_secret,  # None이면 save_clinic에서 기존 값 유지
+        solapi_api_secret=body.solapi_api_secret,
         solapi_sender=body.solapi_sender,
     )
 
 
-# ── Review reply ──────────────────────────────────────────
+# ── Review reply ──────────────────────────────────────
 
 class ReviewGenerateBody(BaseModel):
     platform: str = "naver"
@@ -105,9 +174,9 @@ class ReviewGenerateBody(BaseModel):
 
 
 @app.post("/api/review/generate")
-async def api_generate_review(body: ReviewGenerateBody, _=Depends(require_auth)):
-    clinic = get_clinic()
-    review_id = create_review(body.platform, body.rating, body.original_text)
+async def api_generate_review(body: ReviewGenerateBody, user_id: str = Depends(require_auth)):
+    clinic = get_clinic(user_id)
+    review_id = create_review(user_id, body.platform, body.rating, body.original_text)
     full_reply = []
 
     async def event_stream():
@@ -129,23 +198,23 @@ async def api_generate_review(body: ReviewGenerateBody, _=Depends(require_auth))
     )
 
 
-# ── Review history ────────────────────────────────────────
+# ── Review history ────────────────────────────────────
 
 @app.get("/api/reviews")
-async def api_list_reviews(limit: int = 20, offset: int = 0, _=Depends(require_auth)):
+async def api_list_reviews(limit: int = 20, offset: int = 0, user_id: str = Depends(require_auth)):
     return {
-        "items": list_reviews(limit, offset),
-        "total": count_reviews(),
+        "items": list_reviews(user_id, limit, offset),
+        "total": count_reviews(user_id),
     }
 
 
 @app.delete("/api/reviews/{review_id}")
-async def api_delete_review(review_id: int, _=Depends(require_auth)):
-    delete_review(review_id)
+async def api_delete_review(review_id: int, user_id: str = Depends(require_auth)):
+    delete_review(user_id, review_id)
     return {"ok": True}
 
 
-# ── Template generation ───────────────────────────────────
+# ── Template generation ───────────────────────────────
 
 class TemplateBody(BaseModel):
     template_type: str
@@ -153,13 +222,14 @@ class TemplateBody(BaseModel):
 
 
 @app.post("/api/template/generate")
-async def api_generate_template(body: TemplateBody, _=Depends(require_auth)):
-    clinic = get_clinic()
+async def api_generate_template(body: TemplateBody, user_id: str = Depends(require_auth)):
+    clinic = get_clinic(user_id)
     tmpl_info = TEMPLATE_PROMPTS.get(body.template_type)
     if not tmpl_info:
         raise HTTPException(status_code=400, detail="알 수 없는 템플릿 유형")
 
     template_id = create_template_record(
+        user_id=user_id,
         template_type=body.template_type,
         label=tmpl_info["label"],
         params=body.params,
@@ -174,8 +244,6 @@ async def api_generate_template(body: TemplateBody, _=Depends(require_auth)):
             output = "".join(full_text)
             update_template_output(template_id, output)
             yield f"data: {json.dumps({'done': True, 'template_id': template_id}, ensure_ascii=False)}\n\n"
-        except ValueError as e:
-            yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
 
@@ -186,23 +254,23 @@ async def api_generate_template(body: TemplateBody, _=Depends(require_auth)):
     )
 
 
-# ── Template history ──────────────────────────────────────
+# ── Template history ──────────────────────────────────
 
 @app.get("/api/templates")
-async def api_list_templates(limit: int = 20, offset: int = 0, _=Depends(require_auth)):
+async def api_list_templates(limit: int = 20, offset: int = 0, user_id: str = Depends(require_auth)):
     return {
-        "items": list_templates(limit, offset),
-        "total": count_templates(),
+        "items": list_templates(user_id, limit, offset),
+        "total": count_templates(user_id),
     }
 
 
 @app.delete("/api/templates/{template_id}")
-async def api_delete_template(template_id: int, _=Depends(require_auth)):
-    delete_template_record(template_id)
+async def api_delete_template(template_id: int, user_id: str = Depends(require_auth)):
+    delete_template_record(user_id, template_id)
     return {"ok": True}
 
 
-# ── SMS send ──────────────────────────────────────────────
+# ── SMS send ──────────────────────────────────────────
 
 class SmsBody(BaseModel):
     receiver: str
@@ -210,8 +278,8 @@ class SmsBody(BaseModel):
 
 
 @app.post("/api/sms/send")
-async def api_send_sms(body: SmsBody, _=Depends(require_auth)):
-    clinic = get_clinic()
+async def api_send_sms(body: SmsBody, user_id: str = Depends(require_auth)):
+    clinic = get_clinic(user_id)
     api_key = clinic.get("solapi_api_key", "")
     api_secret = clinic.get("solapi_api_secret", "")
     sender = clinic.get("solapi_sender", "")
@@ -226,7 +294,7 @@ async def api_send_sms(body: SmsBody, _=Depends(require_auth)):
         raise HTTPException(status_code=502, detail=str(e))
 
 
-# ── SPA fallback ──────────────────────────────────────────
+# ── SPA fallback ──────────────────────────────────────
 
 @app.get("/")
 async def root():

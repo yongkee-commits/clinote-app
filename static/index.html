@@ -244,6 +244,16 @@ textarea { resize: vertical; min-height: 80px; }
 .login-form input { font-size: 16px; padding: 14px; letter-spacing: 1px; }
 .login-theme-btn { display: flex; align-items: center; justify-content: center; gap: 6px; background: none; border: none; color: var(--text2); font-size: 13px; cursor: pointer; margin: 20px 0 0; padding: 8px 0; }
 .error-msg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
+.kakao-login-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; max-width: 400px;
+  background: #FEE500; color: #191919;
+  border: none; border-radius: var(--radius);
+  padding: 16px 20px; font-size: 16px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.kakao-login-btn:active { transform: scale(0.97); opacity: 0.85; }
 
 /* ══ Spinner ════════════════════════════════════════ */
 .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
@@ -302,11 +312,11 @@ textarea { resize: vertical; min-height: 80px; }
     <div class="login-logo">Clinote</div>
     <div class="login-tagline">병원 홍보를 위한<br>AI 콘텐츠 파트너</div>
     <div class="login-form">
-      <div class="form-group">
-        <input type="password" id="login-pw" placeholder="비밀번호 입력" autocomplete="current-password">
-      </div>
-      <button class="btn btn-primary" onclick="doLogin()">
-        <span id="login-btn-text">로그인</span>
+      <button class="kakao-login-btn" onclick="doKakaoLogin()">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <path d="M11 2C6.03 2 2 5.36 2 9.5c0 2.64 1.65 4.96 4.13 6.3l-1.05 3.87c-.09.34.28.6.57.4L10.1 17.7c.3.04.6.06.9.06 4.97 0 9-3.36 9-7.5S15.97 2 11 2z" fill="#191919"/>
+        </svg>
+        카카오로 로그인
       </button>
       <div class="error-msg" id="login-error"></div>
     </div>
@@ -473,6 +483,7 @@ textarea { resize: vertical; min-height: 80px; }
 <div id="screen-settings" class="screen">
   <div class="header">
     <h1>병원 설정</h1>
+    <button class="theme-btn" onclick="doLogout()" title="로그아웃" style="font-size:13px; margin-right:4px;">로그아웃</button>
     <button class="theme-btn" onclick="toggleTheme()">🌙</button>
   </div>
   <div class="scroll-area">
@@ -895,31 +906,16 @@ function showScreen(name) {
 }
 
 // ══ Auth ═══════════════════════════════════════════════
-async function doLogin() {
-  const pw = document.getElementById('login-pw').value;
-  const errEl = document.getElementById('login-error');
-  const btnText = document.getElementById('login-btn-text');
-  errEl.textContent = '';
-  btnText.textContent = '로그인 중...';
-  try {
-    const r = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pw }),
-    });
-    if (!r.ok) {
-      const d = await r.json().catch(() => ({}));
-      throw new Error(d.detail || '비밀번호가 올바르지 않습니다');
-    }
-    const { token: t } = await r.json();
-    token = t;
-    localStorage.setItem('clinote_token', t);
-    afterLogin();
-  } catch (e) {
-    errEl.textContent = e.message;
-  } finally {
-    btnText.textContent = '로그인';
-  }
+function doKakaoLogin() {
+  window.location.href = '/api/auth/kakao';
+}
+
+async function doLogout() {
+  try { await api('POST', '/api/auth/logout'); } catch {}
+  localStorage.removeItem('clinote_token');
+  token = '';
+  document.getElementById('bottom-nav').classList.remove('visible');
+  showScreen('login');
 }
 
 async function afterLogin() {
@@ -1495,7 +1491,23 @@ if ('serviceWorker' in navigator) {
 
 // ══ Init ═══════════════════════════════════════════════
 initTheme();
-document.getElementById('login-pw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// Kakao OAuth 리다이렉트 처리: URL에서 token / error 파라미터 수신
+(function handleOAuthRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const urlToken = params.get('token');
+  const urlError = params.get('error');
+  if (urlToken) {
+    token = urlToken;
+    localStorage.setItem('clinote_token', token);
+    window.history.replaceState({}, document.title, '/');
+  }
+  if (urlError) {
+    document.getElementById('login-error').textContent = '로그인에 실패했습니다. 다시 시도해 주세요.';
+    window.history.replaceState({}, document.title, '/');
+  }
+})();
+
 if (token) afterLogin();
 </script>
 </body>
