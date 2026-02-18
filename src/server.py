@@ -15,6 +15,7 @@ from src.database import (
     list_templates, delete_template_record, count_templates,
 )
 from src.ai import stream_review_reply, stream_template, TEMPLATE_PROMPTS
+from src.sms import send_sms
 
 app = FastAPI(title="Clinote")
 
@@ -54,7 +55,10 @@ async def api_login(body: LoginBody, request: Request):
 
 @app.get("/api/clinic")
 async def api_get_clinic(_=Depends(require_auth)):
-    return get_clinic()
+    clinic = get_clinic()
+    # API secret은 존재 여부만 반환 (값 노출 방지)
+    clinic["solapi_api_secret"] = "SET" if clinic.get("solapi_api_secret") else ""
+    return clinic
 
 
 class ClinicBody(BaseModel):
@@ -68,6 +72,9 @@ class ClinicBody(BaseModel):
     naver_map_url: str = ""
     instagram_url: str = ""
     kakao_channel: str = ""
+    solapi_api_key: str = ""
+    solapi_api_secret: str | None = None  # None이면 기존 값 유지
+    solapi_sender: str = ""
 
 
 @app.put("/api/clinic")
@@ -83,6 +90,9 @@ async def api_save_clinic(body: ClinicBody, _=Depends(require_auth)):
         naver_map_url=body.naver_map_url,
         instagram_url=body.instagram_url,
         kakao_channel=body.kakao_channel,
+        solapi_api_key=body.solapi_api_key,
+        solapi_api_secret=body.solapi_api_secret,  # None이면 save_clinic에서 기존 값 유지
+        solapi_sender=body.solapi_sender,
     )
 
 
@@ -190,6 +200,30 @@ async def api_list_templates(limit: int = 20, offset: int = 0, _=Depends(require
 async def api_delete_template(template_id: int, _=Depends(require_auth)):
     delete_template_record(template_id)
     return {"ok": True}
+
+
+# ── SMS send ──────────────────────────────────────────────
+
+class SmsBody(BaseModel):
+    receiver: str
+    text: str
+
+
+@app.post("/api/sms/send")
+async def api_send_sms(body: SmsBody, _=Depends(require_auth)):
+    clinic = get_clinic()
+    api_key = clinic.get("solapi_api_key", "")
+    api_secret = clinic.get("solapi_api_secret", "")
+    sender = clinic.get("solapi_sender", "")
+
+    if not api_key or not api_secret or not sender:
+        raise HTTPException(status_code=400, detail="솔라피 설정이 필요합니다 (API Key / Secret / 발신번호)")
+
+    try:
+        result = await send_sms(api_key, api_secret, sender, body.receiver, body.text)
+        return {"ok": True, "result": result}
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 # ── SPA fallback ──────────────────────────────────────────

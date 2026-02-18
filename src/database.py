@@ -25,6 +25,9 @@ def init_db():
                 open_hours TEXT DEFAULT '',
                 instagram_url TEXT DEFAULT '',
                 kakao_channel TEXT DEFAULT '',
+                solapi_api_key TEXT DEFAULT '',
+                solapi_api_secret TEXT DEFAULT '',
+                solapi_sender TEXT DEFAULT '',
                 updated_at TEXT DEFAULT (datetime('now', 'localtime'))
             );
 
@@ -55,6 +58,9 @@ def init_db():
             ("open_hours", "TEXT DEFAULT ''"),
             ("instagram_url", "TEXT DEFAULT ''"),
             ("kakao_channel", "TEXT DEFAULT ''"),
+            ("solapi_api_key", "TEXT DEFAULT ''"),
+            ("solapi_api_secret", "TEXT DEFAULT ''"),
+            ("solapi_sender", "TEXT DEFAULT ''"),
         ]
         for col, definition in new_cols:
             if col not in existing:
@@ -104,13 +110,20 @@ def save_clinic(name: str, specialty: str, doctor_name: str,
                 tone: str, forbidden_words: list, emphasis: str,
                 phone: str = "", address: str = "",
                 naver_map_url: str = "", open_hours: str = "",
-                instagram_url: str = "", kakao_channel: str = "") -> dict:
+                instagram_url: str = "", kakao_channel: str = "",
+                solapi_api_key: str = "", solapi_api_secret: str | None = None,
+                solapi_sender: str = "") -> dict:
     fw_json = json.dumps(forbidden_words, ensure_ascii=False)
+    # secret이 None이면 기존 DB 값 유지
+    if solapi_api_secret is None:
+        existing = get_clinic()
+        solapi_api_secret = existing.get("solapi_api_secret", "")
     with _connect() as conn:
         conn.execute("""
             INSERT INTO clinic (id, name, specialty, doctor_name, tone, forbidden_words, emphasis,
-                phone, address, naver_map_url, open_hours, instagram_url, kakao_channel, updated_at)
-            VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+                phone, address, naver_map_url, open_hours, instagram_url, kakao_channel,
+                solapi_api_key, solapi_api_secret, solapi_sender, updated_at)
+            VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
             ON CONFLICT(id) DO UPDATE SET
                 name = excluded.name,
                 specialty = excluded.specialty,
@@ -124,9 +137,13 @@ def save_clinic(name: str, specialty: str, doctor_name: str,
                 open_hours = excluded.open_hours,
                 instagram_url = excluded.instagram_url,
                 kakao_channel = excluded.kakao_channel,
+                solapi_api_key = excluded.solapi_api_key,
+                solapi_api_secret = excluded.solapi_api_secret,
+                solapi_sender = excluded.solapi_sender,
                 updated_at = excluded.updated_at
         """, (name, specialty, doctor_name, tone, fw_json, emphasis,
-              phone, address, naver_map_url, open_hours, instagram_url, kakao_channel))
+              phone, address, naver_map_url, open_hours, instagram_url, kakao_channel,
+              solapi_api_key, solapi_api_secret, solapi_sender))
     return get_clinic()
 
 

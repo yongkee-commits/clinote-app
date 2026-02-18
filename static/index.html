@@ -433,6 +433,20 @@ textarea { resize: vertical; min-height: 80px; }
           <button class="btn btn-secondary btn-sm" onclick="regenTemplate()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>재생성
           </button>
+          <button class="btn btn-primary btn-sm" onclick="openSendModal()" id="tmpl-send-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>발송
+          </button>
+        </div>
+        <!-- 발송 패널 -->
+        <div id="send-panel" style="display:none; margin-top:14px; padding:14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--card2);">
+          <div style="font-size:12px; color:var(--text2); font-weight:600; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:10px;">SMS 발송</div>
+          <div style="display:flex; gap:8px;">
+            <input type="tel" id="sms-receiver" placeholder="수신자 번호 (예: 01012345678)" style="flex:1">
+            <button class="btn btn-primary btn-sm" id="sms-send-btn" onclick="doSendSms()">
+              <span id="sms-btn-text">발송</span>
+            </button>
+          </div>
+          <div style="font-size:12px; color:var(--text2); margin-top:8px;">솔라피 연동 필요 · 설정에서 API Key 입력</div>
         </div>
       </div>
     </div>
@@ -525,6 +539,25 @@ textarea { resize: vertical; min-height: 80px; }
     <div class="form-group">
       <label>카카오 채널</label>
       <input type="text" id="s-kakao-channel" placeholder="예: @서울스마일치과 또는 채널 URL">
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-title">SMS 발송 (솔라피)</div>
+    <p class="settings-header" style="margin-top:-8px">솔라피 계정을 연결하면 생성한 문자를 앱에서 바로 발송할 수 있습니다.</p>
+
+    <div class="form-group">
+      <label>솔라피 API Key</label>
+      <input type="text" id="s-solapi-key" placeholder="솔라피 콘솔에서 발급" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+      <label>솔라피 API Secret</label>
+      <input type="password" id="s-solapi-secret" placeholder="솔라피 콘솔에서 발급" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+      <label>발신번호 (솔라피에 등록된 번호)</label>
+      <input type="tel" id="s-solapi-sender" placeholder="예: 0212345678">
     </div>
 
     <div class="divider"></div>
@@ -1282,6 +1315,38 @@ function copyText(text) {
   navigator.clipboard.writeText(text).then(() => toast('복사되었습니다 ✓'));
 }
 
+// ══ SMS 발송 ════════════════════════════════════════════
+function openSendModal() {
+  const panel = document.getElementById('send-panel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  if (panel.style.display === 'block') {
+    document.getElementById('sms-receiver').focus();
+  }
+}
+
+async function doSendSms() {
+  const receiver = document.getElementById('sms-receiver').value.trim();
+  if (!receiver) { toast('수신자 번호를 입력하세요'); return; }
+  const text = document.getElementById('tmpl-output').textContent;
+  if (!text || text === '내용이 여기에 표시됩니다') { toast('발송할 내용이 없습니다'); return; }
+
+  const btn = document.getElementById('sms-send-btn');
+  const btnText = document.getElementById('sms-btn-text');
+  btn.disabled = true;
+  btnText.textContent = '발송 중...';
+  try {
+    await api('POST', '/api/sms/send', { receiver, text });
+    toast('발송 완료 ✓');
+    document.getElementById('sms-receiver').value = '';
+    document.getElementById('send-panel').style.display = 'none';
+  } catch (e) {
+    toast('발송 실패: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = '발송';
+  }
+}
+
 // ══ Settings ═══════════════════════════════════════════
 async function loadSettings() {
   try {
@@ -1292,6 +1357,9 @@ async function loadSettings() {
     document.getElementById('s-tone').value = clinic.tone || 'formal';
     document.getElementById('s-phone').value = clinic.phone || '';
     document.getElementById('s-naver-map').value = clinic.naver_map_url || '';
+    document.getElementById('s-solapi-key').value = clinic.solapi_api_key || '';
+    document.getElementById('s-solapi-secret').value = clinic.solapi_api_secret === 'SET' ? '••••••••' : '';
+    document.getElementById('s-solapi-sender').value = clinic.solapi_sender || '';
     document.getElementById('s-instagram').value = clinic.instagram_url || '';
     document.getElementById('s-kakao-channel').value = clinic.kakao_channel || '';
     currentSpecialty = clinic.specialty || '치과';
@@ -1399,6 +1467,12 @@ async function saveSettings() {
       emphasis: emphasisList.join(', '),
       phone: document.getElementById('s-phone').value.trim(),
       naver_map_url: document.getElementById('s-naver-map').value.trim(),
+      solapi_api_key: document.getElementById('s-solapi-key').value.trim(),
+      solapi_api_secret: (() => {
+        const v = document.getElementById('s-solapi-secret').value.trim();
+        return v === '••••••••' ? undefined : v;  // 마스킹된 값은 변경 안 함
+      })(),
+      solapi_sender: document.getElementById('s-solapi-sender').value.trim(),
       instagram_url: document.getElementById('s-instagram').value.trim(),
       kakao_channel: document.getElementById('s-kakao-channel').value.trim(),
     });
