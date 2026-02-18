@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" data-theme="dark">
+<html lang="ko" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -31,15 +31,15 @@
   --chip-text: #7da394;
 }
 [data-theme="light"] {
-  --bg: #f2f8f5;
+  --bg: #f0f0f0;
   --card: #ffffff;
-  --card2: #e8f5ef;
-  --border: #c0ddd3;
-  --text: #0d2b20;
-  --text2: #4a7a65;
-  --shadow: 0 4px 24px rgba(0,0,0,0.1);
-  --chip-bg: #dff0e9;
-  --chip-text: #3a6b58;
+  --card2: #f7f7f7;
+  --border: #e0e0e0;
+  --text: #111111;
+  --text2: #888888;
+  --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  --chip-bg: #efefef;
+  --chip-text: #555555;
 }
 
 /* ══ Reset & Base ════════════════════════════════════ */
@@ -284,7 +284,7 @@ textarea { resize: vertical; min-height: 80px; }
 <div id="screen-login" class="screen active">
   <div class="login-wrap">
     <div class="login-logo">Clinote</div>
-    <div class="login-tagline">치과 원장님을 위한<br>AI 리뷰 답변 파트너</div>
+    <div class="login-tagline">병원 홍보를 위한<br>AI 콘텐츠 파트너</div>
     <div class="login-form">
       <div class="form-group">
         <input type="password" id="login-pw" placeholder="비밀번호 입력" autocomplete="current-password">
@@ -295,8 +295,8 @@ textarea { resize: vertical; min-height: 80px; }
       <div class="error-msg" id="login-error"></div>
     </div>
     <button class="login-theme-btn" onclick="toggleTheme()">
-      <span id="login-theme-icon">☀️</span>
-      <span id="login-theme-label">라이트 모드</span>
+      <span id="login-theme-icon">🌙</span>
+      <span id="login-theme-label">다크 모드</span>
     </button>
   </div>
 </div>
@@ -307,6 +307,7 @@ textarea { resize: vertical; min-height: 80px; }
     <h1>Clinote</h1>
     <span class="subtitle" id="clinic-name-header"></span>
     <button class="theme-btn" onclick="toggleTheme()" id="theme-btn-reply">🌙</button>
+
   </div>
   <div class="scroll-area">
     <div class="form-group">
@@ -740,7 +741,7 @@ let currentSpecialty = '치과';
 
 // ══ Theme ══════════════════════════════════════════════
 function initTheme() {
-  const saved = localStorage.getItem('clinote_theme') || 'dark';
+  const saved = localStorage.getItem('clinote_theme') || 'light';
   setTheme(saved);
 }
 
