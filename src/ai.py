@@ -98,6 +98,21 @@ def _build_template_prompt(clinic: dict, template_type: str, params: dict) -> tu
     tone_desc = TONE_LABELS.get(clinic.get("tone", "formal"), TONE_LABELS["formal"])
     emphasis = clinic.get("emphasis", "").strip() or "없음"
 
+    contact_parts = []
+    if clinic.get("phone"):
+        contact_parts.append(f"- 전화번호: {clinic['phone']}")
+    if clinic.get("address"):
+        contact_parts.append(f"- 주소: {clinic['address']}")
+    if clinic.get("open_hours"):
+        contact_parts.append(f"- 진료시간: {clinic['open_hours']}")
+    if clinic.get("naver_map_url"):
+        contact_parts.append(f"- 네이버 지도: {clinic['naver_map_url']}")
+    if clinic.get("instagram_url"):
+        contact_parts.append(f"- 인스타그램: {clinic['instagram_url']}")
+    if clinic.get("kakao_channel"):
+        contact_parts.append(f"- 카카오 채널: {clinic['kakao_channel']}")
+    contact_block = "\n".join(contact_parts) if contact_parts else "- (연락처 미등록)"
+
     system = f"""당신은 {clinic.get('name', '병원')} {clinic.get('specialty', '치과')}의 콘텐츠 작성 담당자입니다.
 
 병원 정보:
@@ -106,6 +121,9 @@ def _build_template_prompt(clinic: dict, template_type: str, params: dict) -> tu
 - 말투: {tone_desc}
 - 강조 사항: {emphasis}
 
+병원 연락처:
+{contact_block}
+
 규칙:
 1. 병원명과 진료과목에 맞는 전문적인 내용으로 작성하세요
 2. 의료광고 가이드라인을 준수하세요 (치료 효과 과장 금지)
@@ -113,6 +131,7 @@ def _build_template_prompt(clinic: dict, template_type: str, params: dict) -> tu
 4. 마크다운 문법을 절대 사용하지 마세요 — #, ##, **, *, _, ~~, ``` 등 금지
 5. SNS 캡션 외에는 이모지도 사용하지 마세요
 6. 목록은 숫자(1. 2. 3.)나 · 기호를 사용하세요
+7. 전화번호·주소·진료시간 등 연락처 정보가 있으면 콘텐츠에 자연스럽게 포함하세요
 
 작성 유형: {tmpl['label']}
 작성 지침: {tmpl['instruction']}"""

@@ -11,8 +11,10 @@ from src.database import (
     init_db, get_clinic, save_clinic,
     create_review, update_review_reply,
     list_reviews, delete_review, count_reviews,
+    create_template_record, update_template_output,
+    list_templates, delete_template_record, count_templates,
 )
-from src.ai import stream_review_reply, stream_template
+from src.ai import stream_review_reply, stream_template, TEMPLATE_PROMPTS
 
 app = FastAPI(title="Clinote")
 
@@ -62,6 +64,12 @@ class ClinicBody(BaseModel):
     tone: str = "formal"
     forbidden_words: list[str] = []
     emphasis: str = ""
+    phone: str = ""
+    address: str = ""
+    naver_map_url: str = ""
+    open_hours: str = ""
+    instagram_url: str = ""
+    kakao_channel: str = ""
 
 
 @app.put("/api/clinic")
@@ -73,6 +81,12 @@ async def api_save_clinic(body: ClinicBody, _=Depends(require_auth)):
         tone=body.tone,
         forbidden_words=body.forbidden_words,
         emphasis=body.emphasis,
+        phone=body.phone,
+        address=body.address,
+        naver_map_url=body.naver_map_url,
+        open_hours=body.open_hours,
+        instagram_url=body.instagram_url,
+        kakao_channel=body.kakao_channel,
     )
 
 
@@ -135,6 +149,15 @@ class TemplateBody(BaseModel):
 @app.post("/api/template/generate")
 async def api_generate_template(body: TemplateBody, _=Depends(require_auth)):
     clinic = get_clinic()
+    tmpl_info = TEMPLATE_PROMPTS.get(body.template_type)
+    if not tmpl_info:
+        raise HTTPException(status_code=400, detail="알 수 없는 템플릿 유형")
+
+    template_id = create_template_record(
+        template_type=body.template_type,
+        label=tmpl_info["label"],
+        params=body.params,
+    )
     full_text = []
 
     async def event_stream():
@@ -142,7 +165,9 @@ async def api_generate_template(body: TemplateBody, _=Depends(require_auth)):
             async for chunk in stream_template(clinic, body.template_type, body.params):
                 full_text.append(chunk)
                 yield f"data: {json.dumps({'chunk': chunk}, ensure_ascii=False)}\n\n"
-            yield f"data: {json.dumps({'done': True}, ensure_ascii=False)}\n\n"
+            output = "".join(full_text)
+            update_template_output(template_id, output)
+            yield f"data: {json.dumps({'done': True, 'template_id': template_id}, ensure_ascii=False)}\n\n"
         except ValueError as e:
             yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
         except Exception as e:
@@ -153,6 +178,22 @@ async def api_generate_template(body: TemplateBody, _=Depends(require_auth)):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# ── Template history ──────────────────────────────────────
+
+@app.get("/api/templates")
+async def api_list_templates(limit: int = 20, offset: int = 0, _=Depends(require_auth)):
+    return {
+        "items": list_templates(limit, offset),
+        "total": count_templates(),
+    }
+
+
+@app.delete("/api/templates/{template_id}")
+async def api_delete_template(template_id: int, _=Depends(require_auth)):
+    delete_template_record(template_id)
+    return {"ok": True}
 
 
 # ── SPA fallback ──────────────────────────────────────────

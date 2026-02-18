@@ -430,7 +430,7 @@ textarea { resize: vertical; min-height: 80px; }
 <!-- ══════════ HISTORY ═════════════════════════════════ -->
 <div id="screen-history" class="screen">
   <div class="header">
-    <h1>답변 이력</h1>
+    <h1>이력</h1>
     <button class="theme-btn" onclick="toggleTheme()">🌙</button>
   </div>
   <div class="scroll-area" id="history-list">
@@ -445,7 +445,9 @@ textarea { resize: vertical; min-height: 80px; }
     <button class="theme-btn" onclick="toggleTheme()">🌙</button>
   </div>
   <div class="scroll-area">
-    <p class="settings-header">병원 정보를 입력하면 AI가 맞춤형 답변을 생성합니다.</p>
+    <p class="settings-header">병원 정보를 입력하면 AI가 맞춤형 답변과 문자를 생성합니다.</p>
+
+    <div class="section-title">기본 정보</div>
 
     <div class="form-group">
       <label>병원명 *</label>
@@ -481,6 +483,45 @@ textarea { resize: vertical; min-height: 80px; }
         <option value="professional">전문적이고 신뢰감 있는 말투</option>
       </select>
     </div>
+
+    <div class="divider"></div>
+    <div class="section-title">연락처 및 운영 정보</div>
+
+    <div class="form-group">
+      <label>전화번호</label>
+      <input type="tel" id="s-phone" placeholder="예: 02-1234-5678">
+    </div>
+
+    <div class="form-group">
+      <label>병원 주소</label>
+      <input type="text" id="s-address" placeholder="예: 서울시 강남구 테헤란로 123">
+    </div>
+
+    <div class="form-group">
+      <label>진료시간</label>
+      <input type="text" id="s-open-hours" placeholder="예: 평일 09:00-18:00, 토 09:00-13:00, 일·공휴일 휴진">
+    </div>
+
+    <div class="form-group">
+      <label>네이버 지도 링크</label>
+      <input type="url" id="s-naver-map" placeholder="https://naver.me/...">
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-title">SNS / 채널</div>
+
+    <div class="form-group">
+      <label>인스타그램</label>
+      <input type="text" id="s-instagram" placeholder="예: @seoul_smile_dental 또는 URL">
+    </div>
+
+    <div class="form-group">
+      <label>카카오 채널</label>
+      <input type="text" id="s-kakao-channel" placeholder="예: @서울스마일치과 또는 채널 URL">
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-title">답변 스타일</div>
 
     <!-- 강조사항: 칩 선택 + 커스텀 -->
     <div class="form-group">
@@ -1132,28 +1173,58 @@ async function loadHistory() {
   const listEl = document.getElementById('history-list');
   listEl.innerHTML = '<div class="empty-state"><div class="emoji">⏳</div>불러오는 중...</div>';
   try {
-    const { items } = await api('GET', '/api/reviews?limit=50');
-    if (!items.length) {
-      listEl.innerHTML = '<div class="empty-state"><div class="emoji">📋</div>아직 생성한 답변이 없습니다</div>';
+    const [reviewRes, tmplRes] = await Promise.all([
+      api('GET', '/api/reviews?limit=50'),
+      api('GET', '/api/templates?limit=50'),
+    ]);
+
+    // Merge and sort by created_at DESC
+    const reviews = reviewRes.items.map(r => ({ ...r, _type: 'review' }));
+    const tmpls = tmplRes.items.map(t => ({ ...t, _type: 'template' }));
+    const all = [...reviews, ...tmpls].sort((a, b) =>
+      (b.created_at || '').localeCompare(a.created_at || '')
+    );
+
+    if (!all.length) {
+      listEl.innerHTML = '<div class="empty-state"><div class="emoji">📋</div>아직 생성한 이력이 없습니다</div>';
       return;
     }
-    listEl.innerHTML = items.map(item => {
-      const stars = item.rating ? '★'.repeat(item.rating) + '☆'.repeat(5 - item.rating) : '';
+
+    listEl.innerHTML = all.map(item => {
       const date = item.created_at ? item.created_at.substring(0, 16) : '';
-      const platformLabel = { naver: '네이버', kakao: '카카오', google: '구글' }[item.platform] || item.platform;
-      return `<div class="history-card">
-        <div class="meta">
-          <span class="platform-badge">${platformLabel}</span>
-          ${stars ? `<span class="rating-stars">${stars}</span>` : ''}
-          <span class="history-date">${date}</span>
-        </div>
-        <div class="history-review">${escapeHtml(item.original_text.substring(0, 100))}${item.original_text.length > 100 ? '...' : ''}</div>
-        <div class="history-reply">${escapeHtml(item.reply_text)}</div>
-        <div class="history-actions">
-          <button class="btn btn-secondary btn-sm" onclick="copyText(${JSON.stringify(item.reply_text)})">복사</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteReview(${item.id}, this)">삭제</button>
-        </div>
-      </div>`;
+      if (item._type === 'review') {
+        const stars = item.rating ? '★'.repeat(item.rating) + '☆'.repeat(5 - item.rating) : '';
+        const platformLabel = { naver: '네이버', kakao: '카카오', google: '구글' }[item.platform] || item.platform;
+        return `<div class="history-card">
+          <div class="meta">
+            <span class="platform-badge">리뷰 답변</span>
+            <span class="platform-badge">${platformLabel}</span>
+            ${stars ? `<span class="rating-stars">${stars}</span>` : ''}
+            <span class="history-date">${date}</span>
+          </div>
+          <div class="history-review">${escapeHtml(item.original_text.substring(0, 100))}${item.original_text.length > 100 ? '...' : ''}</div>
+          <div class="history-reply">${escapeHtml(item.reply_text)}</div>
+          <div class="history-actions">
+            <button class="btn btn-secondary btn-sm" onclick="copyText(${JSON.stringify(item.reply_text)})">복사</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteReview(${item.id}, this)">삭제</button>
+          </div>
+        </div>`;
+      } else {
+        const paramsStr = Object.values(item.params || {}).filter(Boolean).join(' · ');
+        return `<div class="history-card">
+          <div class="meta">
+            <span class="platform-badge">문자·공지</span>
+            <span class="platform-badge">${escapeHtml(item.label || item.template_type)}</span>
+            <span class="history-date">${date}</span>
+          </div>
+          ${paramsStr ? `<div class="history-review">${escapeHtml(paramsStr.substring(0, 80))}</div>` : ''}
+          <div class="history-reply">${escapeHtml(item.output_text)}</div>
+          <div class="history-actions">
+            <button class="btn btn-secondary btn-sm" onclick="copyText(${JSON.stringify(item.output_text)})">복사</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTemplate(${item.id}, this)">삭제</button>
+          </div>
+        </div>`;
+      }
     }).join('');
   } catch (e) {
     listEl.innerHTML = `<div class="empty-state"><div class="emoji">❌</div>${e.message}</div>`;
@@ -1164,6 +1235,18 @@ async function deleteReview(id, btn) {
   btn.disabled = true;
   try {
     await api('DELETE', `/api/reviews/${id}`);
+    btn.closest('.history-card').remove();
+    toast('삭제되었습니다');
+  } catch (e) {
+    toast('삭제 실패: ' + e.message);
+    btn.disabled = false;
+  }
+}
+
+async function deleteTemplate(id, btn) {
+  btn.disabled = true;
+  try {
+    await api('DELETE', `/api/templates/${id}`);
     btn.closest('.history-card').remove();
     toast('삭제되었습니다');
   } catch (e) {
@@ -1184,6 +1267,12 @@ async function loadSettings() {
     document.getElementById('s-specialty').value = clinic.specialty || '치과';
     document.getElementById('s-doctor').value = clinic.doctor_name || '';
     document.getElementById('s-tone').value = clinic.tone || 'formal';
+    document.getElementById('s-phone').value = clinic.phone || '';
+    document.getElementById('s-address').value = clinic.address || '';
+    document.getElementById('s-open-hours').value = clinic.open_hours || '';
+    document.getElementById('s-naver-map').value = clinic.naver_map_url || '';
+    document.getElementById('s-instagram').value = clinic.instagram_url || '';
+    document.getElementById('s-kakao-channel').value = clinic.kakao_channel || '';
     currentSpecialty = clinic.specialty || '치과';
 
     // Parse emphasis string → list
@@ -1287,6 +1376,12 @@ async function saveSettings() {
       tone: document.getElementById('s-tone').value,
       forbidden_words: forbiddenWords,
       emphasis: emphasisList.join(', '),
+      phone: document.getElementById('s-phone').value.trim(),
+      address: document.getElementById('s-address').value.trim(),
+      open_hours: document.getElementById('s-open-hours').value.trim(),
+      naver_map_url: document.getElementById('s-naver-map').value.trim(),
+      instagram_url: document.getElementById('s-instagram').value.trim(),
+      kakao_channel: document.getElementById('s-kakao-channel').value.trim(),
     });
     updateClinicHeader(clinic);
     toast('설정이 저장되었습니다 ✓');

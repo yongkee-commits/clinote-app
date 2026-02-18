@@ -1,6 +1,7 @@
 import json
 import sqlite3
 from contextlib import contextmanager
+from typing import Any
 from src.config import DB_PATH
 
 
@@ -18,6 +19,12 @@ def init_db():
                 tone TEXT NOT NULL DEFAULT 'formal',
                 forbidden_words TEXT DEFAULT '[]',
                 emphasis TEXT DEFAULT '',
+                phone TEXT DEFAULT '',
+                address TEXT DEFAULT '',
+                naver_map_url TEXT DEFAULT '',
+                open_hours TEXT DEFAULT '',
+                instagram_url TEXT DEFAULT '',
+                kakao_channel TEXT DEFAULT '',
                 updated_at TEXT DEFAULT (datetime('now', 'localtime'))
             );
 
@@ -29,7 +36,29 @@ def init_db():
                 reply_text TEXT DEFAULT '',
                 created_at TEXT DEFAULT (datetime('now', 'localtime'))
             );
+
+            CREATE TABLE IF NOT EXISTS templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                template_type TEXT NOT NULL,
+                label TEXT DEFAULT '',
+                params TEXT DEFAULT '{}',
+                output_text TEXT DEFAULT '',
+                created_at TEXT DEFAULT (datetime('now', 'localtime'))
+            );
         """)
+        # Migrate existing clinic table (add columns if missing)
+        existing = {row[1] for row in conn.execute("PRAGMA table_info(clinic)").fetchall()}
+        new_cols = [
+            ("phone", "TEXT DEFAULT ''"),
+            ("address", "TEXT DEFAULT ''"),
+            ("naver_map_url", "TEXT DEFAULT ''"),
+            ("open_hours", "TEXT DEFAULT ''"),
+            ("instagram_url", "TEXT DEFAULT ''"),
+            ("kakao_channel", "TEXT DEFAULT ''"),
+        ]
+        for col, definition in new_cols:
+            if col not in existing:
+                conn.execute(f"ALTER TABLE clinic ADD COLUMN {col} {definition}")
         conn.commit()
 
 
@@ -48,10 +77,10 @@ def _connect():
         conn.close()
 
 
-def _row(row) -> dict | None:
+def _row(row) -> dict[str, Any] | None:
     if row is None:
         return None
-    d = dict(row)
+    d: dict[str, Any] = dict(row)
     if "forbidden_words" in d and d["forbidden_words"]:
         try:
             d["forbidden_words"] = json.loads(d["forbidden_words"])
@@ -66,20 +95,22 @@ def get_clinic() -> dict:
     with _connect() as conn:
         row = conn.execute("SELECT * FROM clinic WHERE id = 1").fetchone()
         if row is None:
-            conn.execute(
-                "INSERT OR IGNORE INTO clinic (id) VALUES (1)"
-            )
+            conn.execute("INSERT OR IGNORE INTO clinic (id) VALUES (1)")
             row = conn.execute("SELECT * FROM clinic WHERE id = 1").fetchone()
         return _row(row)
 
 
 def save_clinic(name: str, specialty: str, doctor_name: str,
-                tone: str, forbidden_words: list, emphasis: str) -> dict:
+                tone: str, forbidden_words: list, emphasis: str,
+                phone: str = "", address: str = "",
+                naver_map_url: str = "", open_hours: str = "",
+                instagram_url: str = "", kakao_channel: str = "") -> dict:
     fw_json = json.dumps(forbidden_words, ensure_ascii=False)
     with _connect() as conn:
         conn.execute("""
-            INSERT INTO clinic (id, name, specialty, doctor_name, tone, forbidden_words, emphasis, updated_at)
-            VALUES (1, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+            INSERT INTO clinic (id, name, specialty, doctor_name, tone, forbidden_words, emphasis,
+                phone, address, naver_map_url, open_hours, instagram_url, kakao_channel, updated_at)
+            VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
             ON CONFLICT(id) DO UPDATE SET
                 name = excluded.name,
                 specialty = excluded.specialty,
@@ -87,8 +118,15 @@ def save_clinic(name: str, specialty: str, doctor_name: str,
                 tone = excluded.tone,
                 forbidden_words = excluded.forbidden_words,
                 emphasis = excluded.emphasis,
+                phone = excluded.phone,
+                address = excluded.address,
+                naver_map_url = excluded.naver_map_url,
+                open_hours = excluded.open_hours,
+                instagram_url = excluded.instagram_url,
+                kakao_channel = excluded.kakao_channel,
                 updated_at = excluded.updated_at
-        """, (name, specialty, doctor_name, tone, fw_json, emphasis))
+        """, (name, specialty, doctor_name, tone, fw_json, emphasis,
+              phone, address, naver_map_url, open_hours, instagram_url, kakao_channel))
     return get_clinic()
 
 
@@ -128,4 +166,51 @@ def delete_review(review_id: int):
 def count_reviews() -> int:
     with _connect() as conn:
         row = conn.execute("SELECT COUNT(*) FROM reviews").fetchone()
+        return row[0] if row else 0
+
+
+# ── Templates ─────────────────────────────────────────────
+
+def create_template_record(template_type: str, label: str, params: dict) -> int:
+    with _connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO templates (template_type, label, params) VALUES (?, ?, ?)",
+            (template_type, label, json.dumps(params, ensure_ascii=False))
+        )
+        return cur.lastrowid
+
+
+def update_template_output(template_id: int, output_text: str):
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE templates SET output_text = ? WHERE id = ?",
+            (output_text, template_id)
+        )
+
+
+def list_templates(limit: int = 20, offset: int = 0) -> list[dict[str, Any]]:
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM templates ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            (limit, offset)
+        ).fetchall()
+    result: list[dict[str, Any]] = []
+    for r in rows:
+        d: dict[str, Any] = dict(r)
+        try:
+            d["params"] = json.loads(d["params"])
+        except Exception:
+            d["params"] = {}
+        result.append(d)
+    return result
+
+
+def delete_template_record(template_id: int):
+    with _connect() as conn:
+        conn.execute("DELETE FROM templates WHERE id = ?", (template_id,))
+
+
+def count_templates() -> int:
+    with _connect() as conn:
+        row = conn.execute("SELECT COUNT(*) FROM templates").fetchone()
         return row[0] if row else 0
