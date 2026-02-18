@@ -65,9 +65,7 @@ class ClinicBody(BaseModel):
     forbidden_words: list[str] = []
     emphasis: str = ""
     phone: str = ""
-    address: str = ""
     naver_map_url: str = ""
-    open_hours: str = ""
     instagram_url: str = ""
     kakao_channel: str = ""
 
@@ -82,9 +80,7 @@ async def api_save_clinic(body: ClinicBody, _=Depends(require_auth)):
         forbidden_words=body.forbidden_words,
         emphasis=body.emphasis,
         phone=body.phone,
-        address=body.address,
         naver_map_url=body.naver_map_url,
-        open_hours=body.open_hours,
         instagram_url=body.instagram_url,
         kakao_channel=body.kakao_channel,
     )
