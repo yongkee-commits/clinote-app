@@ -394,10 +394,98 @@ textarea { resize: vertical; min-height: 80px; }
   cursor: pointer; transition: all 0.15s;
 }
 .filter-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ══ Promo Modal ════════════════════════════════════ */
+#promo-modal {
+  display: none; position: fixed; inset: 0; z-index: 2000;
+  align-items: center; justify-content: center;
+}
+#promo-modal.show { display: flex; }
+.promo-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.75); }
+.promo-box {
+  position: relative; max-width: 320px; width: 88%;
+  border-radius: 16px; overflow: hidden; z-index: 1;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.promo-close {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(0,0,0,0.55); color: #fff; border: none;
+  border-radius: 50%; width: 30px; height: 30px;
+  font-size: 15px; cursor: pointer; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+}
+#promo-img { width: 100%; display: block; }
+
+/* ══ Admin ══════════════════════════════════════════ */
+#screen-admin { background: var(--bg); }
+.admin-header {
+  padding: 16px 20px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; background: var(--bg);
+  position: sticky; top: 0; z-index: 10;
+}
+.admin-header h1 { font-size: 17px; font-weight: 800; flex: 1; letter-spacing: -0.5px; }
+.admin-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); }
+.admin-tab {
+  flex: 1; padding: 12px 0; font-size: 13px; font-weight: 600;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--text2); cursor: pointer; transition: all 0.15s;
+}
+.admin-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.admin-pane { display: none; padding: 20px; }
+.admin-pane.active { display: block; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.stat-card {
+  background: var(--card2); border-radius: var(--radius); padding: 16px;
+  border: 1px solid var(--border);
+}
+.stat-card .stat-val { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+.stat-card .stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.user-row {
+  background: var(--card2); border-radius: var(--radius); padding: 14px 16px;
+  margin-bottom: 10px; border: 1px solid var(--border); cursor: pointer;
+}
+.user-row:active { opacity: 0.7; }
+.user-row-top { display: flex; align-items: center; gap: 10px; }
+.user-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--border); flex-shrink: 0; }
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 14px; font-weight: 600; }
+.user-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.plan-badge {
+  font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px;
+  background: var(--chip-bg); color: var(--chip-text);
+}
+.plan-badge.pro { background: #111; color: #fff; }
+.plan-badge.beta { background: #e8f4fd; color: #1a6fb5; }
+.user-sub-form {
+  display: none; margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.user-sub-form.open { display: block; }
+.admin-field { margin-bottom: 10px; }
+.admin-field label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 4px; }
+.admin-field select, .admin-field input[type="text"], .admin-field textarea {
+  width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text); font-size: 13px; font-family: inherit;
+  box-sizing: border-box;
+}
+.admin-toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.popup-preview { margin-top: 12px; border-radius: 12px; overflow: hidden; max-width: 200px; }
+.popup-preview img { width: 100%; display: block; }
 </style>
 </head>
 <body>
 <div id="app">
+
+<!-- ══════════ PROMO MODAL ═════════════════════════════ -->
+<div id="promo-modal">
+  <div class="promo-backdrop" onclick="closePromo()"></div>
+  <div class="promo-box">
+    <button class="promo-close" onclick="closePromo()">✕</button>
+    <a id="promo-link" href="#" target="_blank" rel="noopener">
+      <img id="promo-img" src="" alt="공지">
+    </a>
+  </div>
+</div>
 
 <!-- ══════════ LOGIN ══════════════════════════════════ -->
 <div id="screen-login" class="screen active">
@@ -544,6 +632,61 @@ textarea { resize: vertical; min-height: 80px; }
   </div>
 </div>
 
+<!-- ══════════ ADMIN ══════════════════════════════════ -->
+<div id="screen-admin" class="screen">
+  <div class="admin-header">
+    <button class="back-btn" onclick="window.location.href='/'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <h1>🔐 Clinote Admin</h1>
+  </div>
+  <div class="admin-tabs">
+    <button class="admin-tab active" onclick="switchAdminTab('stats', this)">통계</button>
+    <button class="admin-tab" onclick="switchAdminTab('users', this)">회원</button>
+    <button class="admin-tab" onclick="switchAdminTab('popup', this)">팝업</button>
+  </div>
+  <div style="overflow-y:auto;flex:1">
+    <!-- 통계 -->
+    <div id="admin-pane-stats" class="admin-pane active">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-val" id="stat-users">-</div><div class="stat-label">총 가입자</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-subs">-</div><div class="stat-label">활성 구독</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-today">-</div><div class="stat-label">오늘 생성</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-total">-</div><div class="stat-label">누적 생성</div></div>
+      </div>
+    </div>
+    <!-- 회원 -->
+    <div id="admin-pane-users" class="admin-pane">
+      <div id="admin-user-list"><div style="color:var(--text2);font-size:14px">불러오는 중...</div></div>
+    </div>
+    <!-- 팝업 -->
+    <div id="admin-pane-popup" class="admin-pane">
+      <div class="admin-field">
+        <label>이미지 URL</label>
+        <input type="text" id="popup-image-url" placeholder="https://..." oninput="previewPopupImg()">
+      </div>
+      <div class="admin-field">
+        <label>링크 URL (선택)</label>
+        <input type="text" id="popup-link-url" placeholder="https://...">
+      </div>
+      <div class="admin-field">
+        <label>제목 (선택)</label>
+        <input type="text" id="popup-title" placeholder="공지 제목">
+      </div>
+      <div class="admin-field">
+        <label class="admin-toggle">
+          <input type="checkbox" id="popup-active" style="width:auto">
+          팝업 활성화
+        </label>
+      </div>
+      <div class="popup-preview" id="popup-preview" style="display:none">
+        <img id="popup-preview-img" src="" alt="미리보기">
+      </div>
+      <button id="popup-save-btn" onclick="saveAdminPopup()" style="margin-top:16px;width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:700;cursor:pointer">저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════ CLINIC (병원정보) ═══════════════════════ -->
 <div id="screen-clinic" class="screen">
   <div class="header">
@@ -682,7 +825,11 @@ textarea { resize: vertical; min-height: 80px; }
     <div class="env-list-card">
       <div class="env-list-row">
         <label>현재 플랜</label>
-        <span class="env-row-value" style="background:#f0fdf4;color:#16a34a;font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px">베타 무료</span>
+        <span id="sub-plan-badge" class="env-row-value" style="font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px;background:#f0fdf4;color:#16a34a">베타 무료</span>
+      </div>
+      <div class="env-list-row" id="sub-trial-row" style="display:none">
+        <label>체험 기간</label>
+        <span id="sub-trial-text" style="font-size:13px;color:var(--text2)"></span>
       </div>
       <div class="env-list-row" onclick="toast('구독 기능은 정식 출시 시 제공될 예정입니다')" style="cursor:pointer">
         <label style="cursor:pointer">구독 관리</label>
@@ -978,6 +1125,32 @@ function loadEnvSettings() {
       avatar.textContent = (currentUser.nickname || '?').charAt(0).toUpperCase();
     }
   }
+  loadSubscriptionStatus();
+}
+
+async function loadSubscriptionStatus() {
+  try {
+    const sub = await api('GET', '/api/subscription');
+    const badge = document.getElementById('sub-plan-badge');
+    const trialRow = document.getElementById('sub-trial-row');
+    const trialText = document.getElementById('sub-trial-text');
+    const planMap = { free: '무료', beta: '베타 무료', pro: 'Pro 구독중' };
+    const colorMap = {
+      free: 'background:#f5f5f5;color:#666',
+      beta: 'background:#e8f4fd;color:#1a6fb5',
+      pro: 'background:#111;color:#fff',
+    };
+    const plan = sub.plan || 'free';
+    badge.textContent = (planMap[plan] || plan) + (sub.is_active && plan !== 'free' ? ' ✓' : '');
+    badge.style.cssText = `font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px;${colorMap[plan] || colorMap.free}`;
+    if (sub.trial_ends_at) {
+      const days = Math.ceil((new Date(sub.trial_ends_at) - new Date()) / 86400000);
+      if (days > 0) {
+        trialText.textContent = `체험 D-${days}일`;
+        trialRow.style.display = 'flex';
+      }
+    }
+  } catch(e) {}
 }
 
 async function clearAllHistory() {
@@ -1104,6 +1277,23 @@ async function afterLogin() {
     updateClinicHeader(clinic);
     if (!clinic.name) showScreen('clinic');
   } catch {}
+  showPromoIfNeeded();
+}
+
+// ══ Promo Popup ══════════════════════════════════════════
+async function showPromoIfNeeded() {
+  try {
+    const res = await api('GET', '/api/popup');
+    if (!res?.active || !res?.image_url) return;
+    document.getElementById('promo-img').src = res.image_url;
+    const link = document.getElementById('promo-link');
+    link.href = res.link_url || '#';
+    link.style.pointerEvents = res.link_url ? 'auto' : 'none';
+    document.getElementById('promo-modal').classList.add('show');
+  } catch(e) {}
+}
+function closePromo() {
+  document.getElementById('promo-modal').classList.remove('show');
 }
 
 function updateClinicHeader(clinic) {
@@ -1691,7 +1881,155 @@ if ('serviceWorker' in navigator) {
   }
 })();
 
-if (token) afterLogin();
+// ── Admin entry ──────────────────────────────────────
+if (window.location.pathname === '/admin') {
+  if (token) showAdminPanel();
+  else window.location.href = '/api/auth/kakao';
+} else {
+  if (token) afterLogin();
+}
+
+// ══ Admin Panel ══════════════════════════════════════════
+async function showAdminPanel() {
+  document.getElementById('bottom-nav').classList.remove('visible');
+  try {
+    const me = await api('GET', '/api/me');
+    currentUser = me;
+  } catch {
+    window.location.href = '/api/auth/kakao';
+    return;
+  }
+  // 403이면 일반 유저
+  try {
+    await api('GET', '/api/admin/stats');
+  } catch(e) {
+    toast('관리자 권한이 없습니다');
+    setTimeout(() => { window.location.href = '/'; }, 1500);
+    return;
+  }
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('screen-admin').classList.add('active');
+  loadAdminStats();
+}
+
+function switchAdminTab(tab, el) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.admin-pane').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('admin-pane-' + tab).classList.add('active');
+  if (tab === 'stats') loadAdminStats();
+  else if (tab === 'users') loadAdminUsers();
+  else if (tab === 'popup') loadAdminPopup();
+}
+
+async function loadAdminStats() {
+  try {
+    const s = await api('GET', '/api/admin/stats');
+    document.getElementById('stat-users').textContent = s.total_users;
+    document.getElementById('stat-subs').textContent = s.active_subscriptions;
+    document.getElementById('stat-today').textContent = s.today_generated;
+    document.getElementById('stat-total').textContent = s.total_generated;
+  } catch(e) {}
+}
+
+async function loadAdminUsers() {
+  const list = document.getElementById('admin-user-list');
+  list.innerHTML = '<div style="color:var(--text2);font-size:14px">불러오는 중...</div>';
+  try {
+    const res = await api('GET', '/api/admin/users?limit=100');
+    const planLabel = { free: '무료', beta: '베타', pro: 'Pro' };
+    list.innerHTML = res.items.map(u => `
+      <div class="user-row" onclick="toggleUserForm('${u.kakao_id}')">
+        <div class="user-row-top">
+          <img class="user-avatar" src="${u.profile_image || ''}" onerror="this.style.display='none'">
+          <div class="user-info">
+            <div class="user-name">${escapeHtml(u.nickname || u.kakao_id)}</div>
+            <div class="user-meta">${u.created_at ? u.created_at.substring(0,10) : ''} · 리뷰 ${u.review_count} · 문자 ${u.template_count}</div>
+          </div>
+          <span class="plan-badge ${u.plan === 'pro' ? 'pro' : u.plan === 'beta' ? 'beta' : ''}">${planLabel[u.plan] || u.plan}</span>
+        </div>
+        <div class="user-sub-form" id="form-${u.kakao_id}">
+          <div class="admin-field">
+            <label>플랜</label>
+            <select id="plan-${u.kakao_id}">
+              <option value="free" ${u.plan==='free'?'selected':''}>무료</option>
+              <option value="beta" ${u.plan==='beta'?'selected':''}>베타 무료</option>
+              <option value="pro" ${u.plan==='pro'?'selected':''}>Pro</option>
+            </select>
+          </div>
+          <div class="admin-field">
+            <label class="admin-toggle">
+              <input type="checkbox" id="active-${u.kakao_id}" style="width:auto" ${u.is_active?'checked':''}>
+              구독 활성화
+            </label>
+          </div>
+          <div class="admin-field">
+            <label>체험 만료일 (YYYY-MM-DD, 선택)</label>
+            <input type="text" id="trial-${u.kakao_id}" value="${u.trial_ends_at||''}" placeholder="2026-03-01">
+          </div>
+          <div class="admin-field">
+            <label>메모</label>
+            <input type="text" id="memo-${u.kakao_id}" value="${escapeHtml(u.memo||'')}" placeholder="관리자 메모">
+          </div>
+          <button onclick="saveUserSub('${u.kakao_id}', event)" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">저장</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="color:red">오류: ' + e.message + '</div>';
+  }
+}
+
+function toggleUserForm(kakaoId) {
+  const form = document.getElementById('form-' + kakaoId);
+  form.classList.toggle('open');
+}
+
+async function saveUserSub(kakaoId, e) {
+  e.stopPropagation();
+  const plan = document.getElementById('plan-' + kakaoId).value;
+  const isActive = document.getElementById('active-' + kakaoId).checked ? 1 : 0;
+  const trial = document.getElementById('trial-' + kakaoId).value.trim() || null;
+  const memo = document.getElementById('memo-' + kakaoId).value.trim();
+  try {
+    await api('PUT', `/api/admin/users/${kakaoId}/subscription`, { plan, is_active: isActive, trial_ends_at: trial, memo });
+    toast('저장되었습니다 ✓');
+  } catch(err) {
+    toast('저장 실패: ' + err.message);
+  }
+}
+
+async function loadAdminPopup() {
+  try {
+    const p = await api('GET', '/api/admin/popup');
+    document.getElementById('popup-image-url').value = p.image_url || '';
+    document.getElementById('popup-link-url').value = p.link_url || '';
+    document.getElementById('popup-title').value = p.title || '';
+    document.getElementById('popup-active').checked = !!p.active;
+    previewPopupImg();
+  } catch(e) {}
+}
+
+function previewPopupImg() {
+  const url = document.getElementById('popup-image-url').value.trim();
+  const preview = document.getElementById('popup-preview');
+  const img = document.getElementById('popup-preview-img');
+  if (url) { img.src = url; preview.style.display = 'block'; }
+  else { preview.style.display = 'none'; }
+}
+
+async function saveAdminPopup() {
+  const image_url = document.getElementById('popup-image-url').value.trim();
+  const link_url = document.getElementById('popup-link-url').value.trim();
+  const title = document.getElementById('popup-title').value.trim();
+  const active = document.getElementById('popup-active').checked ? 1 : 0;
+  try {
+    await api('PUT', '/api/admin/popup', { image_url, link_url, title, active });
+    toast('팝업 설정이 저장되었습니다 ✓');
+  } catch(e) {
+    toast('저장 실패: ' + e.message);
+  }
+}
 </script>
 </div><!-- #app -->
 </body>

@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from src.auth import create_session_token, require_auth
+from src.auth import create_session_token, require_auth, require_admin
 from src.config import STATIC_DIR, KAKAO_CLIENT_ID, KAKAO_CLIENT_SECRET, KAKAO_REDIRECT_URI
 from src.database import (
     init_db,
@@ -14,11 +14,15 @@ from src.database import (
     get_clinic, save_clinic,
     create_review, update_review_reply,
     list_reviews, delete_review, count_reviews,
+    delete_all_reviews,
     create_template_record, update_template_output,
     list_templates, delete_template_record, count_templates,
+    delete_all_templates, delete_all_user_data,
+    get_popup_config, save_popup_config,
+    get_subscription, upsert_subscription,
+    list_users_with_stats, get_global_stats,
 )
 from src.ai import stream_review_reply, stream_template, TEMPLATE_PROMPTS
-from src.sms import send_sms
 
 app = FastAPI(title="Clinote")
 
@@ -127,9 +131,7 @@ async def api_me(user_id: str = Depends(require_auth)):
 
 @app.get("/api/clinic")
 async def api_get_clinic(user_id: str = Depends(require_auth)):
-    clinic = get_clinic(user_id)
-    clinic["solapi_api_secret"] = "SET" if clinic.get("solapi_api_secret") else ""
-    return clinic
+    return get_clinic(user_id)
 
 
 class ClinicBody(BaseModel):
@@ -143,9 +145,6 @@ class ClinicBody(BaseModel):
     naver_map_url: str = ""
     instagram_url: str = ""
     kakao_channel: str = ""
-    solapi_api_key: str = ""
-    solapi_api_secret: str | None = None
-    solapi_sender: str = ""
 
 
 @app.put("/api/clinic")
@@ -162,9 +161,6 @@ async def api_save_clinic(body: ClinicBody, user_id: str = Depends(require_auth)
         naver_map_url=body.naver_map_url,
         instagram_url=body.instagram_url,
         kakao_channel=body.kakao_channel,
-        solapi_api_key=body.solapi_api_key,
-        solapi_api_secret=body.solapi_api_secret,
-        solapi_sender=body.solapi_sender,
     )
 
 
@@ -209,6 +205,12 @@ async def api_list_reviews(limit: int = 20, offset: int = 0, user_id: str = Depe
         "items": list_reviews(user_id, limit, offset),
         "total": count_reviews(user_id),
     }
+
+
+@app.delete("/api/reviews/all")
+async def api_delete_all_reviews(user_id: str = Depends(require_auth)):
+    delete_all_reviews(user_id)
+    return {"ok": True}
 
 
 @app.delete("/api/reviews/{review_id}")
@@ -267,38 +269,107 @@ async def api_list_templates(limit: int = 20, offset: int = 0, user_id: str = De
     }
 
 
+@app.delete("/api/templates/all")
+async def api_delete_all_templates(user_id: str = Depends(require_auth)):
+    delete_all_templates(user_id)
+    return {"ok": True}
+
+
 @app.delete("/api/templates/{template_id}")
 async def api_delete_template(template_id: int, user_id: str = Depends(require_auth)):
     delete_template_record(user_id, template_id)
     return {"ok": True}
 
 
-# ── SMS send ──────────────────────────────────────────
+# ── Account management ────────────────────────────────
 
-class SmsBody(BaseModel):
-    receiver: str
-    text: str
+@app.delete("/api/account")
+async def api_delete_account(request: Request, user_id: str = Depends(require_auth)):
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        delete_session(auth_header[7:])
+    delete_all_user_data(user_id)
+    return {"ok": True}
 
 
-@app.post("/api/sms/send")
-async def api_send_sms(body: SmsBody, user_id: str = Depends(require_auth)):
-    clinic = get_clinic(user_id)
-    api_key = clinic.get("solapi_api_key", "")
-    api_secret = clinic.get("solapi_api_secret", "")
-    sender = clinic.get("solapi_sender", "")
+# ── Popup ─────────────────────────────────────────────
 
-    if not api_key or not api_secret or not sender:
-        raise HTTPException(status_code=400, detail="솔라피 설정이 필요합니다 (API Key / Secret / 발신번호)")
+@app.get("/api/popup")
+async def api_get_popup(user_id: str = Depends(require_auth)):
+    popup = get_popup_config()
+    if not popup.get("active"):
+        return {"active": False}
+    return popup
 
-    try:
-        result = await send_sms(api_key, api_secret, sender, body.receiver, body.text)
-        return {"ok": True, "result": result}
-    except RuntimeError as e:
-        raise HTTPException(status_code=502, detail=str(e))
+
+# ── Subscription ───────────────────────────────────────
+
+@app.get("/api/subscription")
+async def api_get_subscription(user_id: str = Depends(require_auth)):
+    return get_subscription(user_id)
+
+
+# ── Admin ──────────────────────────────────────────────
+
+@app.get("/api/admin/stats")
+async def api_admin_stats(admin_id: str = Depends(require_admin)):
+    return get_global_stats()
+
+
+@app.get("/api/admin/users")
+async def api_admin_users(limit: int = 50, offset: int = 0, admin_id: str = Depends(require_admin)):
+    return {"items": list_users_with_stats(limit, offset)}
+
+
+@app.get("/api/admin/users/{kakao_id}")
+async def api_admin_user_detail(kakao_id: str, admin_id: str = Depends(require_admin)):
+    user = get_user(kakao_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    sub = get_subscription(kakao_id)
+    return {**user, "subscription": sub}
+
+
+class SubBody(BaseModel):
+    plan: str = "free"
+    is_active: int = 0
+    trial_ends_at: str | None = None
+    expires_at: str | None = None
+    memo: str = ""
+
+
+@app.put("/api/admin/users/{kakao_id}/subscription")
+async def api_admin_set_subscription(kakao_id: str, body: SubBody, admin_id: str = Depends(require_admin)):
+    return upsert_subscription(
+        user_id=kakao_id,
+        plan=body.plan,
+        is_active=body.is_active,
+        trial_ends_at=body.trial_ends_at,
+        expires_at=body.expires_at,
+        memo=body.memo,
+    )
+
+
+@app.get("/api/admin/popup")
+async def api_admin_get_popup(admin_id: str = Depends(require_admin)):
+    return get_popup_config()
+
+
+class PopupBody(BaseModel):
+    image_url: str = ""
+    link_url: str = ""
+    title: str = ""
+    active: int = 0
+
+
+@app.put("/api/admin/popup")
+async def api_admin_save_popup(body: PopupBody, admin_id: str = Depends(require_admin)):
+    return save_popup_config(body.image_url, body.link_url, body.title, body.active)
 
 
 # ── SPA fallback ──────────────────────────────────────
 
+@app.get("/admin")
 @app.get("/")
 async def root():
     return FileResponse(str(STATIC_DIR / "index.html"))

@@ -1,7 +1,10 @@
+import os
 import secrets
 import time
 from fastapi import HTTPException, Request
 from src.config import TOKEN_EXPIRE
+
+ADMIN_KAKAO_ID = os.getenv("ADMIN_KAKAO_ID", "")
 
 
 def create_session_token() -> tuple[str, int]:
@@ -35,3 +38,11 @@ def require_auth(request: Request) -> str:
         raise HTTPException(status_code=401, detail="세션이 만료되었습니다")
 
     return session["kakao_id"]
+
+
+def require_admin(request: Request) -> str:
+    """어드민 전용 — ADMIN_KAKAO_ID와 일치하는 세션만 허용."""
+    kakao_id = require_auth(request)
+    if not ADMIN_KAKAO_ID or kakao_id != ADMIN_KAKAO_ID:
+        raise HTTPException(status_code=403, detail="관리자 전용입니다")
+    return kakao_id

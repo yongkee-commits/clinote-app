@@ -100,6 +100,32 @@ def init_db():
             "CREATE INDEX IF NOT EXISTS idx_templates_user ON templates(user_id)"
         )
 
+        # ── popup_config ──────────────────────────────────
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS popup_config (
+                id         INTEGER PRIMARY KEY DEFAULT 1,
+                image_url  TEXT NOT NULL DEFAULT '',
+                link_url   TEXT NOT NULL DEFAULT '',
+                title      TEXT NOT NULL DEFAULT '',
+                active     INTEGER NOT NULL DEFAULT 0,
+                updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+            )
+        """)
+
+        # ── subscriptions ─────────────────────────────────
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS subscriptions (
+                user_id       TEXT PRIMARY KEY REFERENCES users(kakao_id) ON DELETE CASCADE,
+                plan          TEXT NOT NULL DEFAULT 'free',
+                trial_ends_at TEXT,
+                subscribed_at TEXT,
+                expires_at    TEXT,
+                is_active     INTEGER NOT NULL DEFAULT 0,
+                memo          TEXT DEFAULT '',
+                updated_at    TEXT DEFAULT (datetime('now', 'localtime'))
+            )
+        """)
+
         conn.commit()
 
 
@@ -333,3 +359,121 @@ def count_templates(user_id: str) -> int:
             "SELECT COUNT(*) FROM templates WHERE user_id = ?", (user_id,)
         ).fetchone()
     return row[0] if row else 0
+
+
+def delete_all_reviews(user_id: str):
+    with _connect() as conn:
+        conn.execute("DELETE FROM reviews WHERE user_id = ?", (user_id,))
+
+
+def delete_all_templates(user_id: str):
+    with _connect() as conn:
+        conn.execute("DELETE FROM templates WHERE user_id = ?", (user_id,))
+
+
+def delete_all_user_data(user_id: str):
+    """리뷰/템플릿/클리닉(cascade)/세션(cascade)/유저 전체 삭제"""
+    with _connect() as conn:
+        conn.execute("DELETE FROM reviews WHERE user_id = ?", (user_id,))
+        conn.execute("DELETE FROM templates WHERE user_id = ?", (user_id,))
+        conn.execute("DELETE FROM users WHERE kakao_id = ?", (user_id,))
+
+
+# ── Popup Config ───────────────────────────────────────
+
+def get_popup_config() -> dict[str, Any]:
+    with _connect() as conn:
+        row = conn.execute("SELECT * FROM popup_config WHERE id = 1").fetchone()
+        if row is None:
+            conn.execute("INSERT OR IGNORE INTO popup_config (id) VALUES (1)")
+            row = conn.execute("SELECT * FROM popup_config WHERE id = 1").fetchone()
+    return dict(row) if row else {"id": 1, "image_url": "", "link_url": "", "title": "", "active": 0}
+
+
+def save_popup_config(image_url: str, link_url: str, title: str, active: int) -> dict[str, Any]:
+    with _connect() as conn:
+        conn.execute("""
+            INSERT INTO popup_config (id, image_url, link_url, title, active, updated_at)
+            VALUES (1, ?, ?, ?, ?, datetime('now', 'localtime'))
+            ON CONFLICT(id) DO UPDATE SET
+                image_url  = excluded.image_url,
+                link_url   = excluded.link_url,
+                title      = excluded.title,
+                active     = excluded.active,
+                updated_at = excluded.updated_at
+        """, (image_url, link_url, title, active))
+    return get_popup_config()
+
+
+# ── Subscriptions ──────────────────────────────────────
+
+def get_subscription(user_id: str) -> dict[str, Any]:
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT * FROM subscriptions WHERE user_id = ?", (user_id,)
+        ).fetchone()
+    if row is None:
+        return {"user_id": user_id, "plan": "free", "is_active": 0,
+                "trial_ends_at": None, "expires_at": None, "memo": ""}
+    return dict(row)
+
+
+def upsert_subscription(user_id: str, plan: str, is_active: int,
+                        trial_ends_at: str | None = None,
+                        expires_at: str | None = None,
+                        memo: str = "") -> dict[str, Any]:
+    with _connect() as conn:
+        conn.execute("""
+            INSERT INTO subscriptions (user_id, plan, is_active, trial_ends_at, expires_at, memo,
+                subscribed_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), datetime('now', 'localtime'))
+            ON CONFLICT(user_id) DO UPDATE SET
+                plan          = excluded.plan,
+                is_active     = excluded.is_active,
+                trial_ends_at = excluded.trial_ends_at,
+                expires_at    = excluded.expires_at,
+                memo          = excluded.memo,
+                updated_at    = excluded.updated_at
+        """, (user_id, plan, is_active, trial_ends_at, expires_at, memo))
+    return get_subscription(user_id)
+
+
+# ── Admin Stats ────────────────────────────────────────
+
+def list_users_with_stats(limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
+    with _connect() as conn:
+        rows = conn.execute("""
+            SELECT u.kakao_id, u.nickname, u.profile_image, u.created_at,
+                   COALESCE(s.plan, 'free') AS plan,
+                   COALESCE(s.is_active, 0) AS is_active,
+                   s.trial_ends_at, s.expires_at, s.memo,
+                   (SELECT COUNT(*) FROM reviews r WHERE r.user_id = u.kakao_id) AS review_count,
+                   (SELECT COUNT(*) FROM templates t WHERE t.user_id = u.kakao_id) AS template_count
+            FROM users u
+            LEFT JOIN subscriptions s ON s.user_id = u.kakao_id
+            ORDER BY u.created_at DESC
+            LIMIT ? OFFSET ?
+        """, (limit, offset)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_global_stats() -> dict[str, Any]:
+    with _connect() as conn:
+        total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        active_subs = conn.execute(
+            "SELECT COUNT(*) FROM subscriptions WHERE is_active = 1"
+        ).fetchone()[0]
+        today_reviews = conn.execute(
+            "SELECT COUNT(*) FROM reviews WHERE date(created_at) = date('now', 'localtime')"
+        ).fetchone()[0]
+        today_templates = conn.execute(
+            "SELECT COUNT(*) FROM templates WHERE date(created_at) = date('now', 'localtime')"
+        ).fetchone()[0]
+        total_reviews = conn.execute("SELECT COUNT(*) FROM reviews").fetchone()[0]
+        total_templates = conn.execute("SELECT COUNT(*) FROM templates").fetchone()[0]
+    return {
+        "total_users": total_users,
+        "active_subscriptions": active_subs,
+        "today_generated": today_reviews + today_templates,
+        "total_generated": total_reviews + total_templates,
+    }
