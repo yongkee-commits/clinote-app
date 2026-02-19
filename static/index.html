@@ -1451,7 +1451,7 @@ function renderHistoryList() {
         <div class="history-review">${escapeHtml(item.original_text.substring(0, 100))}${item.original_text.length > 100 ? '...' : ''}</div>
         <div class="history-reply">${escapeHtml(item.reply_text)}</div>
         <div class="history-actions">
-          <button class="btn btn-secondary btn-sm" onclick="copyText(${JSON.stringify(item.reply_text)})">복사</button>
+          <button class="btn btn-secondary btn-sm copy-btn" data-text="${escapeHtml(item.reply_text)}">복사</button>
           <button class="btn btn-danger btn-sm" onclick="deleteReview(${item.id}, this)">삭제</button>
         </div>
       </div>`;
@@ -1466,12 +1466,16 @@ function renderHistoryList() {
         ${paramsStr ? `<div class="history-review">${escapeHtml(paramsStr.substring(0, 80))}</div>` : ''}
         <div class="history-reply">${escapeHtml(item.output_text)}</div>
         <div class="history-actions">
-          <button class="btn btn-secondary btn-sm" onclick="copyText(${JSON.stringify(item.output_text)})">복사</button>
+          <button class="btn btn-secondary btn-sm copy-btn" data-text="${escapeHtml(item.output_text)}">복사</button>
           <button class="btn btn-danger btn-sm" onclick="deleteTemplate(${item.id}, this)">삭제</button>
         </div>
       </div>`;
     }
   }).join('');
+  // 복사 버튼 이벤트 위임
+  listEl.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => copyText(btn.dataset.text));
+  });
 }
 
 async function loadHistory() {
@@ -1518,7 +1522,16 @@ async function deleteTemplate(id, btn) {
 }
 
 function copyText(text) {
-  navigator.clipboard.writeText(text).then(() => toast('복사되었습니다 ✓'));
+  navigator.clipboard.writeText(text)
+    .then(() => toast('복사되었습니다 ✓'))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('복사되었습니다 ✓');
+    });
 }
 
 // ══ Settings ═══════════════════════════════════════════
