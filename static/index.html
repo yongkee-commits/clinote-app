@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" data-theme="light">
+<html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -16,29 +16,14 @@
   --red: #ef4444;
   --yellow: #f59e0b;
   --radius: 8px;
-}
-[data-theme="dark"] {
-  --accent: #10b981;
-  --accent2: #059669;
-  --bg: #0a0a0a;
-  --card: #141414;
-  --card2: #1e1e1e;
-  --border: #2a2a2a;
-  --text: #f0f0f0;
-  --text2: #888888;
-  --shadow: 0 4px 24px rgba(0,0,0,0.5);
-  --chip-bg: #1e1e1e;
-  --chip-text: #aaaaaa;
-}
-[data-theme="light"] {
   --accent: #111111;
   --accent2: #333333;
   --bg: #ffffff;
   --card: #ffffff;
-  --card2: #f5f5f5;
-  --border: #e5e5e5;
+  --card2: #f7f7f7;
+  --border: #e8e8e8;
   --text: #111111;
-  --text2: #767676;
+  --text2: #8a8a8a;
   --shadow: 0 1px 8px rgba(0,0,0,0.06);
   --chip-bg: #f0f0f0;
   --chip-text: #333333;
@@ -47,13 +32,21 @@
 /* ══ Reset & Base ════════════════════════════════════ */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  background: var(--bg);
-  color: var(--text);
+  background: #0d0d0d;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   min-height: 100dvh;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  letter-spacing: -0.2px;
+}
+#app {
+  width: 100%; max-width: 480px;
+  min-height: 100dvh;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
   transition: background 0.2s, color 0.2s;
+  position: relative;
 }
 .screen { display: none; flex: 1; flex-direction: column; }
 .screen.active { display: flex; }
@@ -70,21 +63,23 @@ body {
   transition: background 0.2s, border-color 0.2s;
 }
 .header h1 { font-size: 18px; font-weight: 800; color: var(--text); flex: 1; letter-spacing: -0.5px; }
+.header-logo { height: 22px; width: auto; flex: none; }
+.header-spacer { flex: 1; }
 .header .subtitle { font-size: 12px; color: var(--text2); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ══ Theme toggle ════════════════════════════════════ */
-.theme-btn {
+/* ══ Logout button ════════════════════════════════════ */
+.logout-btn {
   background: none;
   border: 1px solid var(--border);
-  border-radius: 50%;
-  width: 34px; height: 34px;
-  display: flex; align-items: center; justify-content: center;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px; font-weight: 600;
+  color: var(--text2);
   cursor: pointer;
-  font-size: 15px;
   flex-shrink: 0;
-  transition: background 0.2s, border-color 0.2s;
+  font-family: inherit;
 }
-.theme-btn:active { opacity: 0.6; }
+.logout-btn:active { opacity: 0.6; }
 
 /* ══ Bottom Nav ══════════════════════════════════════ */
 .bottom-nav {
@@ -113,7 +108,7 @@ body {
 label {
   display: block; font-size: 11px; color: var(--text2);
   margin-bottom: 6px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.8px;
+  letter-spacing: -0.2px;
 }
 input, textarea, select {
   width: 100%;
@@ -128,8 +123,7 @@ input, textarea, select {
   transition: border-color 0.15s;
 }
 input:focus, textarea:focus, select:focus { border-color: var(--text); }
-[data-theme="light"] select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23111111' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
-[data-theme="dark"] select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23111111' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
 textarea { resize: vertical; min-height: 80px; }
 .form-group { margin-bottom: 20px; }
 
@@ -143,7 +137,15 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .btn:active { transform: scale(0.97); opacity: 0.8; }
 .btn-primary { background: var(--accent); color: #fff; width: 100%; }
-[data-theme="light"] .btn-primary { color: #ffffff; }
+#generate-btn, #tmpl-generate-btn {
+  display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 14px 18px; border-radius: var(--radius); border: none;
+  background: var(--accent); color: #fff; font-size: 15px; font-weight: 600;
+  cursor: pointer; font-family: inherit; letter-spacing: -0.2px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+#generate-btn:disabled, #tmpl-generate-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+#generate-btn:not(:disabled):active, #tmpl-generate-btn:not(:disabled):active { transform: scale(0.97); opacity: 0.8; }
 .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
 .btn-danger { background: var(--red); color: #fff; }
 .btn-sm { padding: 8px 14px; font-size: 13px; }
@@ -152,7 +154,7 @@ textarea { resize: vertical; min-height: 80px; }
 /* ══ Chips (predefined options) ═════════════════════ */
 .chip-label {
   font-size: 11px; color: var(--text2);
-  font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;
+  font-weight: 600; letter-spacing: -0.2px;
   margin-bottom: 8px; margin-top: 4px;
 }
 .chip-group { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
@@ -213,7 +215,27 @@ textarea { resize: vertical; min-height: 80px; }
   transition: background 0.2s;
 }
 .reply-output.empty { color: var(--text2); font-style: normal; border-color: var(--border); }
-.copy-row { display: flex; gap: 8px; margin-top: 10px; }
+.copy-row { display: flex; gap: 8px; margin-top: 12px; }
+.copy-row .btn { flex: 1; white-space: nowrap; }
+
+/* ══ Input card (Threads style) ════════════════════ */
+.input-card {
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 16px;
+}
+.input-card-label {
+  font-size: 14px; font-weight: 700; color: var(--text);
+  margin-bottom: 8px; letter-spacing: -0.3px;
+}
+.input-card textarea, .input-card input {
+  border: none; background: transparent; padding: 0;
+  font-size: 15px; letter-spacing: -0.2px; line-height: 1.65;
+}
+.input-card textarea:focus, .input-card input:focus { border: none; box-shadow: none; }
+.input-card .reply-output {
+  background: transparent; border: none; padding: 0;
+  border-radius: 0; min-height: 60px;
+}
 
 /* ══ History ════════════════════════════════════════ */
 .history-card {
@@ -235,15 +257,84 @@ textarea { resize: vertical; min-height: 80px; }
 
 /* ══ Login ══════════════════════════════════════════ */
 .login-wrap {
-  display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
-  flex: 1; padding: 48px 28px;
+  display: flex; flex-direction: column; align-items: center;
+  flex: 1; padding-bottom: max(32px, env(safe-area-inset-bottom));
 }
-.login-logo { font-size: 48px; font-weight: 800; color: var(--text); margin-bottom: 8px; letter-spacing: -2px; }
-.login-tagline { font-size: 16px; color: var(--text2); margin-bottom: 52px; line-height: 1.6; font-weight: 400; }
-.login-form { width: 100%; max-width: 400px; }
-.login-form input { font-size: 16px; padding: 14px; letter-spacing: 1px; }
-.login-theme-btn { display: flex; align-items: center; justify-content: center; gap: 6px; background: none; border: none; color: var(--text2); font-size: 13px; cursor: pointer; margin: 20px 0 0; padding: 8px 0; }
+.login-hero {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 0 28px;
+}
+.login-logo { height: 54px; width: auto; margin-bottom: 16px; display: block; }
+.login-tagline { font-size: 15px; color: var(--text2); line-height: 1.6; font-weight: 400; }
+.login-bottom { width: 100%; padding: 0 28px; display: flex; flex-direction: column; align-items: center; }
+
+/* ══ Back / Gear buttons ════════════════════════════ */
+.back-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--text); padding: 4px; margin-right: 4px;
+  display: flex; align-items: center; flex-shrink: 0;
+}
+.back-btn:active { opacity: 0.6; }
+.gear-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--text2); padding: 4px; flex-shrink: 0;
+  display: flex; align-items: center;
+}
+.gear-btn svg { width: 20px; height: 20px; }
+.gear-btn:active { opacity: 0.6; }
+
+/* ══ Env settings screen ════════════════════════════ */
+.env-profile-section {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 32px 20px 24px; gap: 10px;
+}
+.env-avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700; overflow: hidden; flex-shrink: 0;
+}
+.env-nickname { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.4px; }
+.env-subtitle { font-size: 13px; color: var(--text2); }
+.env-section-label {
+  font-size: 12px; font-weight: 600; color: var(--text2);
+  letter-spacing: 0.2px; text-transform: uppercase;
+  padding: 0 4px; margin: 20px 0 6px;
+}
+.env-list-card {
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+}
+.env-list-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 15px 16px; font-size: 15px; color: var(--text);
+  background: var(--card2); gap: 12px;
+}
+.env-list-row:not(:last-child) { border-bottom: 1px solid var(--border); }
+.env-list-row label {
+  font-size: 15px; color: var(--text); font-weight: 400;
+  margin: 0; flex: 1;
+}
+.env-list-row select {
+  border: none; background: transparent; font-size: 15px;
+  color: var(--text2); text-align: right; padding: 0;
+  font-family: inherit; cursor: pointer; max-width: 120px;
+  -webkit-appearance: none;
+}
+.env-list-row.destructive { color: var(--red); }
+.env-list-row.destructive label { color: var(--red); }
+.env-row-value { font-size: 15px; color: var(--text2); }
+.env-info-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 0; font-size: 15px;
+}
 .error-msg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
+.notice-item { padding: 16px 0; border-bottom: 1px solid var(--border); }
+.notice-item:last-child { border-bottom: none; }
+.notice-date { font-size: 11px; color: var(--text2); margin-bottom: 4px; letter-spacing: -0.1px; }
+.notice-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; letter-spacing: -0.3px; }
+.notice-body { font-size: 14px; color: var(--text2); line-height: 1.65; letter-spacing: -0.2px; }
 .kakao-login-btn {
   display: flex; align-items: center; justify-content: center; gap: 10px;
   width: 100%; max-width: 400px;
@@ -256,7 +347,8 @@ textarea { resize: vertical; min-height: 80px; }
 .kakao-login-btn:active { transform: scale(0.97); opacity: 0.85; }
 
 /* ══ Spinner ════════════════════════════════════════ */
-.spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; flex-shrink: 0; }
+.spinner-row { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ══ Toast ══════════════════════════════════════════ */
@@ -269,7 +361,7 @@ textarea { resize: vertical; min-height: 80px; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ══ Section title ══════════════════════════════════ */
-.section-title { font-size: 11px; color: var(--text2); font-weight: 600; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
+.section-title { font-size: 11px; color: var(--text2); font-weight: 600; margin-bottom: 12px; letter-spacing: -0.2px; }
 .settings-header { font-size: 14px; color: var(--text2); margin-bottom: 24px; line-height: 1.7; }
 .empty-state { text-align: center; color: var(--text2); padding: 48px 20px; font-size: 14px; }
 .empty-state .emoji { font-size: 36px; margin-bottom: 12px; }
@@ -293,8 +385,8 @@ textarea { resize: vertical; min-height: 80px; }
 
 /* ══ History filter tabs ════════════════════════════ */
 .filter-tabs {
-  display: flex; gap: 6px; padding: 12px 20px 0;
-  background: var(--bg); border-bottom: 1px solid var(--border);
+  display: flex; gap: 6px; padding: 12px 20px;
+  background: var(--bg);
 }
 .filter-tab {
   padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
@@ -305,13 +397,16 @@ textarea { resize: vertical; min-height: 80px; }
 </style>
 </head>
 <body>
+<div id="app">
 
 <!-- ══════════ LOGIN ══════════════════════════════════ -->
 <div id="screen-login" class="screen active">
   <div class="login-wrap">
-    <div class="login-logo">Clinote</div>
-    <div class="login-tagline">병원 홍보를 위한<br>AI 콘텐츠 파트너</div>
-    <div class="login-form">
+    <div class="login-hero">
+      <img src="/static/logo.svg" alt="Clinote" class="login-logo">
+      <div class="login-tagline">병원 환자 관리를 위한 AI 콘텐츠 파트너</div>
+    </div>
+    <div class="login-bottom">
       <button class="kakao-login-btn" onclick="doKakaoLogin()">
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
           <path d="M11 2C6.03 2 2 5.36 2 9.5c0 2.64 1.65 4.96 4.13 6.3l-1.05 3.87c-.09.34.28.6.57.4L10.1 17.7c.3.04.6.06.9.06 4.97 0 9-3.36 9-7.5S15.97 2 11 2z" fill="#191919"/>
@@ -320,58 +415,37 @@ textarea { resize: vertical; min-height: 80px; }
       </button>
       <div class="error-msg" id="login-error"></div>
     </div>
-    <button class="login-theme-btn" onclick="toggleTheme()">
-      <span id="login-theme-icon">🌙</span>
-      <span id="login-theme-label">다크 모드</span>
-    </button>
   </div>
 </div>
 
 <!-- ══════════ REPLY ══════════════════════════════════ -->
 <div id="screen-reply" class="screen">
   <div class="header">
-    <h1>Clinote</h1>
+    <img src="/static/logo.svg" alt="Clinote" class="header-logo">
+    <span class="header-spacer"></span>
     <span class="subtitle" id="clinic-name-header"></span>
-    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn-reply">🌙</button>
-
+    <button class="gear-btn" onclick="showEnvSettings()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
   </div>
   <div class="scroll-area">
-    <div class="form-group">
-      <label>플랫폼</label>
-      <div class="platform-tabs">
-        <div class="platform-tab active" data-platform="naver" onclick="selectPlatform('naver')">네이버</div>
-        <div class="platform-tab" data-platform="kakao" onclick="selectPlatform('kakao')">카카오</div>
-        <div class="platform-tab" data-platform="google" onclick="selectPlatform('google')">구글</div>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>별점 (선택)</label>
-      <div class="stars" id="stars-container">
-        <button class="star-btn" data-n="1" onclick="selectRating(1)">★</button>
-        <button class="star-btn" data-n="2" onclick="selectRating(2)">★</button>
-        <button class="star-btn" data-n="3" onclick="selectRating(3)">★</button>
-        <button class="star-btn" data-n="4" onclick="selectRating(4)">★</button>
-        <button class="star-btn" data-n="5" onclick="selectRating(5)">★</button>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>리뷰 내용</label>
+    <div class="input-card">
+      <div class="input-card-label">리뷰 내용</div>
       <textarea id="review-input" placeholder="네이버/카카오에서 리뷰를 복사해서 붙여넣으세요..." rows="5" oninput="onReviewInput()"></textarea>
-      <div class="char-count" id="review-char">0자</div>
+      <div class="char-count" id="review-char" style="margin-top:6px">0자</div>
     </div>
 
-    <button class="btn btn-primary" id="generate-btn" onclick="generateReply()" disabled>
+    <button id="generate-btn" onclick="generateReply()" disabled>
+      <span class="spinner" id="generate-spinner" style="display:none"></span>
       <span id="generate-btn-content">답변 생성</span>
     </button>
 
-    <div style="margin-top: 20px;">
-      <div class="section-title">생성된 답변</div>
+    <div class="input-card" style="margin-top:16px">
+      <div class="input-card-label">생성된 답변</div>
       <div class="reply-output empty" id="reply-output">답변이 여기에 표시됩니다</div>
-      <div class="char-count" id="reply-char"></div>
+      <div class="char-count" id="reply-char" style="margin-top:6px"></div>
       <div class="copy-row" id="copy-row" style="display:none">
-        <button class="btn btn-secondary btn-sm" onclick="copyReply()" style="flex:1">
+        <button class="btn btn-secondary btn-sm" onclick="copyReply()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>복사
         </button>
         <button class="btn btn-secondary btn-sm" onclick="regenerateReply()" id="regen-btn">
@@ -388,7 +462,9 @@ textarea { resize: vertical; min-height: 80px; }
   <div class="header">
     <h1>문자·공지</h1>
     <span class="subtitle" id="tmpl-clinic-header"></span>
-    <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+    <button class="gear-btn" onclick="showEnvSettings()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
   </div>
   <div class="scroll-area">
     <p class="settings-header">환자 안내문, 공지, SNS 캡션을 AI로 빠르게 생성하세요.</p>
@@ -429,7 +505,8 @@ textarea { resize: vertical; min-height: 80px; }
     <div id="tmpl-params">
       <div class="divider"></div>
       <div id="tmpl-fields"></div>
-      <button class="btn btn-primary" id="tmpl-generate-btn" onclick="generateTemplate()">
+      <button id="tmpl-generate-btn" onclick="generateTemplate()">
+        <span class="spinner" id="tmpl-spinner" style="display:none"></span>
         <span id="tmpl-generate-text">생성하기</span>
       </button>
       <div style="margin-top: 20px;">
@@ -437,26 +514,12 @@ textarea { resize: vertical; min-height: 80px; }
         <div class="reply-output empty" id="tmpl-output">내용이 여기에 표시됩니다</div>
         <div class="char-count" id="tmpl-char"></div>
         <div class="copy-row" id="tmpl-copy-row" style="display:none">
-          <button class="btn btn-secondary btn-sm" onclick="copyTmpl()" style="flex:1">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>복사
+          <button class="btn btn-secondary btn-sm" onclick="shareTmpl()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>공유
           </button>
           <button class="btn btn-secondary btn-sm" onclick="regenTemplate()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>재생성
           </button>
-          <button class="btn btn-primary btn-sm" onclick="openSendModal()" id="tmpl-send-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>발송
-          </button>
-        </div>
-        <!-- 발송 패널 -->
-        <div id="send-panel" style="display:none; margin-top:14px; padding:14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--card2);">
-          <div style="font-size:12px; color:var(--text2); font-weight:600; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:10px;">SMS 발송</div>
-          <div style="display:flex; gap:8px;">
-            <input type="tel" id="sms-receiver" placeholder="수신자 번호 (예: 01012345678)" style="flex:1">
-            <button class="btn btn-primary btn-sm" id="sms-send-btn" onclick="doSendSms()">
-              <span id="sms-btn-text">발송</span>
-            </button>
-          </div>
-          <div style="font-size:12px; color:var(--text2); margin-top:8px;">솔라피 연동 필요 · 설정에서 API Key 입력</div>
         </div>
       </div>
     </div>
@@ -467,7 +530,9 @@ textarea { resize: vertical; min-height: 80px; }
 <div id="screen-history" class="screen">
   <div class="header">
     <h1>이력</h1>
-    <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+    <button class="gear-btn" onclick="showEnvSettings()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
   </div>
   <div class="filter-tabs">
     <button class="filter-tab active" id="filter-all" onclick="setHistoryFilter('all')">전체</button>
@@ -479,12 +544,13 @@ textarea { resize: vertical; min-height: 80px; }
   </div>
 </div>
 
-<!-- ══════════ SETTINGS ════════════════════════════════ -->
-<div id="screen-settings" class="screen">
+<!-- ══════════ CLINIC (병원정보) ═══════════════════════ -->
+<div id="screen-clinic" class="screen">
   <div class="header">
-    <h1>병원 설정</h1>
-    <button class="theme-btn" onclick="doLogout()" title="로그아웃" style="font-size:13px; margin-right:4px;">로그아웃</button>
-    <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+    <h1>병원정보</h1>
+    <button class="gear-btn" onclick="showEnvSettings()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
   </div>
   <div class="scroll-area">
     <p class="settings-header">병원 정보를 입력하면 AI가 맞춤형 답변과 문자를 생성합니다.</p>
@@ -553,25 +619,6 @@ textarea { resize: vertical; min-height: 80px; }
     </div>
 
     <div class="divider"></div>
-    <div class="section-title">SMS 발송 (솔라피)</div>
-    <p class="settings-header" style="margin-top:-8px">솔라피 계정을 연결하면 생성한 문자를 앱에서 바로 발송할 수 있습니다.</p>
-
-    <div class="form-group">
-      <label>솔라피 API Key</label>
-      <input type="text" id="s-solapi-key" placeholder="솔라피 콘솔에서 발급" autocomplete="off">
-    </div>
-
-    <div class="form-group">
-      <label>솔라피 API Secret</label>
-      <input type="password" id="s-solapi-secret" placeholder="솔라피 콘솔에서 발급" autocomplete="off">
-    </div>
-
-    <div class="form-group">
-      <label>발신번호 (솔라피에 등록된 번호)</label>
-      <input type="tel" id="s-solapi-sender" placeholder="예: 0212345678">
-    </div>
-
-    <div class="divider"></div>
     <div class="section-title">답변 스타일</div>
 
     <!-- 강조사항: 칩 선택 + 커스텀 -->
@@ -613,6 +660,89 @@ textarea { resize: vertical; min-height: 80px; }
   </div>
 </div>
 
+<!-- ══════════ ENV SETTINGS (환경설정) ════════════════ -->
+<div id="screen-env" class="screen">
+  <div class="header">
+    <button class="back-btn" onclick="goBack()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <h1>환경설정</h1>
+  </div>
+  <div class="scroll-area" style="padding:0 20px 40px">
+
+    <!-- 프로필 -->
+    <div class="env-profile-section">
+      <div class="env-avatar" id="env-avatar">?</div>
+      <div class="env-nickname" id="env-nickname">로딩 중...</div>
+      <div class="env-subtitle">카카오 계정으로 로그인됨</div>
+    </div>
+
+    <!-- 구독 -->
+    <div class="env-section-label">구독</div>
+    <div class="env-list-card">
+      <div class="env-list-row">
+        <label>현재 플랜</label>
+        <span class="env-row-value" style="background:#f0fdf4;color:#16a34a;font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px">베타 무료</span>
+      </div>
+      <div class="env-list-row" onclick="toast('구독 기능은 정식 출시 시 제공될 예정입니다')" style="cursor:pointer">
+        <label style="cursor:pointer">구독 관리</label>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- 데이터 관리 -->
+    <div class="env-section-label">데이터 관리</div>
+    <div class="env-list-card">
+      <div class="env-list-row" onclick="clearAllHistory()" style="cursor:pointer">
+        <label style="cursor:pointer">전체 이력 삭제</label>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- 앱 정보 -->
+    <div class="env-section-label">앱 정보</div>
+    <div class="env-list-card">
+      <div class="env-list-row" onclick="showNotices()" style="cursor:pointer">
+        <label style="cursor:pointer">공지사항</label>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="env-list-row">
+        <label>버전</label>
+        <span class="env-row-value">v1.0.0</span>
+      </div>
+    </div>
+
+    <!-- 계정 -->
+    <div class="env-section-label">계정</div>
+    <div class="env-list-card">
+      <div class="env-list-row" onclick="doLogout()" style="cursor:pointer">
+        <label style="cursor:pointer">로그아웃</label>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="env-list-row destructive" onclick="deleteAccount()" style="cursor:pointer">
+        <label style="cursor:pointer;color:var(--red)">회원 탈퇴</label>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════ NOTICE MODAL ════════════════════════════ -->
+<div id="notice-modal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.4)" onclick="if(event.target===this)closeNotices()">
+  <div style="position:absolute;bottom:0;left:0;right:0;background:var(--bg);border-radius:20px 20px 0 0;padding:24px 20px 40px;max-height:75vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <span style="font-size:18px;font-weight:800;letter-spacing:-0.4px">공지사항</span>
+      <button onclick="closeNotices()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--text2);line-height:1">×</button>
+    </div>
+    <div class="notice-item">
+      <div class="notice-date">2025.06 · 클로즈 베타</div>
+      <div class="notice-title">Clinote 클로즈 베타 시작 🎉</div>
+      <div class="notice-body">베타 테스터로 참여해 주셔서 감사합니다. 현재 서비스는 베타 기간 중 무료로 운영됩니다. 피드백은 언제든 원장님께 직접 전달해 주세요. 더 좋은 서비스로 발전하겠습니다.</div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════ BOTTOM NAV ══════════════════════════════ -->
 <nav class="bottom-nav" id="bottom-nav">
   <button class="nav-btn active" id="nav-reply" onclick="showScreen('reply')">
@@ -627,9 +757,9 @@ textarea { resize: vertical; min-height: 80px; }
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     이력
   </button>
-  <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    설정
+  <button class="nav-btn" id="nav-clinic" onclick="showScreen('clinic')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    병원정보
   </button>
 </nav>
 
@@ -824,39 +954,60 @@ const TEMPLATES = {
 // ══ State ══════════════════════════════════════════════
 let token = localStorage.getItem('clinote_token') || '';
 let currentScreen = 'login';
-let selectedPlatform = 'naver';
-let selectedRating = null;
+let currentUser = null;
+let prevScreen = 'reply';
+let lastRating = null;
 let currentReplyText = '';
 let lastReviewText = '';
-let lastRating = null;
+let currentClinic = null;
+let isGenerating = false;
 let selectedTmplType = null;
 let currentTmplText = '';
 let emphasisList = [];
 let forbiddenWords = [];
 let currentSpecialty = '치과';
 
-// ══ Theme ══════════════════════════════════════════════
-function initTheme() {
-  const saved = localStorage.getItem('clinote_theme') || 'light';
-  setTheme(saved);
+// ══ Env settings ═══════════════════════════════════════
+function loadEnvSettings() {
+  if (currentUser) {
+    document.getElementById('env-nickname').textContent = currentUser.nickname || '사용자';
+    const avatar = document.getElementById('env-avatar');
+    if (currentUser.profile_image) {
+      avatar.innerHTML = `<img src="${currentUser.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    } else {
+      avatar.textContent = (currentUser.nickname || '?').charAt(0).toUpperCase();
+    }
+  }
 }
 
-function setTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('clinote_theme', theme);
-  const isDark = theme === 'dark';
-  const icon = isDark ? '☀️' : '🌙';
-  const label = isDark ? '라이트 모드' : '다크 모드';
-  document.querySelectorAll('.theme-btn').forEach(b => b.textContent = icon);
-  const li = document.getElementById('login-theme-icon');
-  const ll = document.getElementById('login-theme-label');
-  if (li) li.textContent = icon;
-  if (ll) ll.textContent = label;
+async function clearAllHistory() {
+  if (!confirm('전체 이력을 삭제하시겠습니까?\n삭제 후 복구할 수 없습니다.')) return;
+  try {
+    await Promise.all([
+      api('DELETE', '/api/reviews/all'),
+      api('DELETE', '/api/templates/all'),
+    ]);
+    toast('전체 이력이 삭제되었습니다');
+  } catch (e) {
+    toast('삭제 실패: ' + e.message);
+  }
 }
 
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  setTheme(current === 'dark' ? 'light' : 'dark');
+function showNotices() {
+  document.getElementById('notice-modal').style.display = 'block';
+}
+function closeNotices() {
+  document.getElementById('notice-modal').style.display = 'none';
+}
+
+async function deleteAccount() {
+  if (!confirm('정말로 탈퇴하시겠습니까?\n모든 데이터가 영구 삭제됩니다.')) return;
+  try { await api('DELETE', '/api/account'); } catch {}
+  localStorage.removeItem('clinote_token');
+  token = '';
+  currentUser = null;
+  document.getElementById('bottom-nav').classList.remove('visible');
+  showScreen('login');
 }
 
 // ══ Utilities ══════════════════════════════════════════
@@ -868,9 +1019,14 @@ async function api(method, path, body = null) {
   }
   const r = await fetch(path, opts);
   if (r.status === 401) {
+    isGenerating = false;
     localStorage.removeItem('clinote_token');
     token = '';
+    currentUser = null;
+    currentClinic = null;
+    document.getElementById('bottom-nav').classList.remove('visible');
     showScreen('login');
+    toast('세션이 만료되었습니다. 다시 로그인해 주세요');
     throw new Error('세션이 만료되었습니다.');
   }
   if (!r.ok) {
@@ -894,6 +1050,10 @@ function escapeHtml(s) {
 }
 
 function showScreen(name) {
+  if (isGenerating && name !== currentScreen) {
+    toast('생성 중입니다. 잠시 기다려주세요');
+    return;
+  }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(`screen-${name}`).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -901,8 +1061,22 @@ function showScreen(name) {
   if (nb) nb.classList.add('active');
   currentScreen = name;
   if (name === 'history') loadHistory();
-  if (name === 'settings') loadSettings();
+  if (name === 'clinic') loadSettings();
   if (name === 'template') loadTmplClinicHeader();
+}
+
+function showEnvSettings() {
+  prevScreen = currentScreen;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-env').classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  currentScreen = 'env';
+  loadEnvSettings();
+}
+
+function goBack() {
+  showScreen(prevScreen);
+  document.getElementById('bottom-nav').classList.add('visible');
 }
 
 // ══ Auth ═══════════════════════════════════════════════
@@ -914,17 +1088,21 @@ async function doLogout() {
   try { await api('POST', '/api/auth/logout'); } catch {}
   localStorage.removeItem('clinote_token');
   token = '';
+  currentUser = null;
   document.getElementById('bottom-nav').classList.remove('visible');
   showScreen('login');
 }
 
 async function afterLogin() {
   document.getElementById('bottom-nav').classList.add('visible');
+  try { currentUser = await api('GET', '/api/me'); } catch {}
   showScreen('reply');
   try {
     const clinic = await api('GET', '/api/clinic');
+    currentClinic = clinic;
+    currentSpecialty = clinic.specialty || '치과';
     updateClinicHeader(clinic);
-    if (!clinic.name) showScreen('settings');
+    if (!clinic.name) showScreen('clinic');
   } catch {}
 }
 
@@ -936,31 +1114,13 @@ function updateClinicHeader(clinic) {
 async function loadTmplClinicHeader() {
   try {
     const clinic = await api('GET', '/api/clinic');
+    currentSpecialty = clinic.specialty || '치과';
     const el = document.getElementById('tmpl-clinic-header');
     if (el) el.textContent = clinic.name ? `${clinic.name}` : '';
   } catch {}
 }
 
 // ══ Reply screen ════════════════════════════════════════
-function selectPlatform(p) {
-  selectedPlatform = p;
-  document.querySelectorAll('.platform-tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.platform === p);
-  });
-}
-
-function selectRating(n) {
-  if (selectedRating === n) {
-    selectedRating = null;
-    document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
-    return;
-  }
-  selectedRating = n;
-  document.querySelectorAll('.star-btn').forEach(b => {
-    b.classList.toggle('active', parseInt(b.dataset.n) <= n);
-  });
-}
-
 function onReviewInput() {
   const val = document.getElementById('review-input').value;
   document.getElementById('generate-btn').disabled = val.trim().length < 5;
@@ -972,17 +1132,21 @@ function onReviewInput() {
 async function generateReply() {
   const reviewText = document.getElementById('review-input').value.trim();
   if (!reviewText) return;
+  if (!currentClinic?.name) {
+    toast('먼저 병원정보를 설정해주세요');
+    showScreen('clinic');
+    return;
+  }
   lastReviewText = reviewText;
-  lastRating = selectedRating;
-  await _doGenerateReply(reviewText, selectedRating);
+  await _doGenerateReply(reviewText);
 }
 
 async function regenerateReply() {
   if (!lastReviewText) return;
-  await _doGenerateReply(lastReviewText, lastRating);
+  await _doGenerateReply(lastReviewText);
 }
 
-async function _doGenerateReply(reviewText, rating) {
+async function _doGenerateReply(reviewText) {
   const btn = document.getElementById('generate-btn');
   const btnContent = document.getElementById('generate-btn-content');
   const regenBtn = document.getElementById('regen-btn');
@@ -990,9 +1154,11 @@ async function _doGenerateReply(reviewText, rating) {
   const copyRow = document.getElementById('copy-row');
   const replyChar = document.getElementById('reply-char');
 
+  isGenerating = true;
   btn.disabled = true;
   if (regenBtn) regenBtn.disabled = true;
-  btnContent.innerHTML = '<div class="spinner"></div> 생성 중...';
+  document.getElementById('generate-spinner').style.display = 'inline-block';
+  btnContent.style.display = 'none';
   outputEl.textContent = '';
   outputEl.classList.remove('empty');
   copyRow.style.display = 'none';
@@ -1002,7 +1168,7 @@ async function _doGenerateReply(reviewText, rating) {
     const r = await fetch('/api/review/generate', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ platform: selectedPlatform, rating, original_text: reviewText }),
+      body: JSON.stringify({ original_text: reviewText }),
     });
     if (!r.ok) throw new Error('생성 실패');
     await _readStream(r, chunk => {
@@ -1011,6 +1177,7 @@ async function _doGenerateReply(reviewText, rating) {
       replyChar.textContent = `${currentReplyText.length}자`;
     }, () => {
       copyRow.style.display = 'flex';
+      outputEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, err => {
       outputEl.textContent = '오류: ' + err;
       outputEl.classList.add('empty');
@@ -1019,8 +1186,11 @@ async function _doGenerateReply(reviewText, rating) {
     outputEl.textContent = '오류: ' + e.message;
     outputEl.classList.add('empty');
   } finally {
+    isGenerating = false;
     btn.disabled = false;
     if (regenBtn) regenBtn.disabled = false;
+    document.getElementById('generate-spinner').style.display = 'none';
+    btnContent.style.display = '';
     btnContent.textContent = '답변 생성';
     onReviewInput();
   }
@@ -1031,6 +1201,37 @@ function copyReply() {
   navigator.clipboard.writeText(currentReplyText).then(() => toast('답변이 복사되었습니다 ✓'));
 }
 
+async function shareReply() {
+  if (!currentReplyText) return;
+  if (navigator.share) {
+    try {
+      await navigator.share({ text: currentReplyText });
+    } catch (e) {
+      if (e.name !== 'AbortError') copyReply();
+    }
+  } else {
+    copyReply();
+    toast('공유가 지원되지 않아 복사했습니다');
+  }
+}
+
+async function shareTmpl() {
+  const text = document.getElementById('tmpl-output').textContent;
+  if (!text || text === '내용이 여기에 표시됩니다') return;
+  if (navigator.share) {
+    try {
+      await navigator.share({ text });
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        navigator.clipboard.writeText(text).then(() => toast('복사되었습니다 ✓'));
+      }
+    }
+  } else {
+    navigator.clipboard.writeText(text).then(() => toast('복사되었습니다 ✓'));
+    toast('공유가 지원되지 않아 복사했습니다');
+  }
+}
+
 function resetForm() {
   document.getElementById('review-input').value = '';
   document.getElementById('reply-output').textContent = '답변이 여기에 표시됩니다';
@@ -1038,10 +1239,8 @@ function resetForm() {
   document.getElementById('copy-row').style.display = 'none';
   document.getElementById('reply-char').textContent = '';
   document.getElementById('review-char').textContent = '0자';
-  selectedRating = null;
   lastReviewText = '';
   lastRating = null;
-  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
   currentReplyText = '';
   onReviewInput();
 }
@@ -1130,6 +1329,11 @@ function tmplChipClick(chipEl, inputId) {
 
 async function generateTemplate() {
   if (!selectedTmplType) return;
+  if (!currentClinic?.name) {
+    toast('먼저 병원정보를 설정해주세요');
+    showScreen('clinic');
+    return;
+  }
   const tmpl = TEMPLATES[selectedTmplType];
   const params = {};
   let valid = true;
@@ -1166,8 +1370,10 @@ async function _doGenerateTemplate(type, params) {
   const copyRow = document.getElementById('tmpl-copy-row');
   const charEl = document.getElementById('tmpl-char');
 
+  isGenerating = true;
   btn.disabled = true;
-  btnText.innerHTML = '<div class="spinner"></div> 생성 중...';
+  document.getElementById('tmpl-spinner').style.display = 'inline-block';
+  btnText.style.display = 'none';
   outputEl.textContent = '';
   outputEl.classList.remove('empty');
   copyRow.style.display = 'none';
@@ -1186,6 +1392,7 @@ async function _doGenerateTemplate(type, params) {
       charEl.textContent = `${currentTmplText.length}자`;
     }, () => {
       copyRow.style.display = 'flex';
+      outputEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, err => {
       outputEl.textContent = '오류: ' + err;
       outputEl.classList.add('empty');
@@ -1194,7 +1401,10 @@ async function _doGenerateTemplate(type, params) {
     outputEl.textContent = '오류: ' + e.message;
     outputEl.classList.add('empty');
   } finally {
+    isGenerating = false;
     btn.disabled = false;
+    document.getElementById('tmpl-spinner').style.display = 'none';
+    btnText.style.display = '';
     btnText.textContent = '생성하기';
   }
 }
@@ -1311,38 +1521,6 @@ function copyText(text) {
   navigator.clipboard.writeText(text).then(() => toast('복사되었습니다 ✓'));
 }
 
-// ══ SMS 발송 ════════════════════════════════════════════
-function openSendModal() {
-  const panel = document.getElementById('send-panel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-  if (panel.style.display === 'block') {
-    document.getElementById('sms-receiver').focus();
-  }
-}
-
-async function doSendSms() {
-  const receiver = document.getElementById('sms-receiver').value.trim();
-  if (!receiver) { toast('수신자 번호를 입력하세요'); return; }
-  const text = document.getElementById('tmpl-output').textContent;
-  if (!text || text === '내용이 여기에 표시됩니다') { toast('발송할 내용이 없습니다'); return; }
-
-  const btn = document.getElementById('sms-send-btn');
-  const btnText = document.getElementById('sms-btn-text');
-  btn.disabled = true;
-  btnText.textContent = '발송 중...';
-  try {
-    await api('POST', '/api/sms/send', { receiver, text });
-    toast('발송 완료 ✓');
-    document.getElementById('sms-receiver').value = '';
-    document.getElementById('send-panel').style.display = 'none';
-  } catch (e) {
-    toast('발송 실패: ' + e.message);
-  } finally {
-    btn.disabled = false;
-    btnText.textContent = '발송';
-  }
-}
-
 // ══ Settings ═══════════════════════════════════════════
 async function loadSettings() {
   try {
@@ -1353,9 +1531,6 @@ async function loadSettings() {
     document.getElementById('s-tone').value = clinic.tone || 'formal';
     document.getElementById('s-phone').value = clinic.phone || '';
     document.getElementById('s-naver-map').value = clinic.naver_map_url || '';
-    document.getElementById('s-solapi-key').value = clinic.solapi_api_key || '';
-    document.getElementById('s-solapi-secret').value = clinic.solapi_api_secret === 'SET' ? '••••••••' : '';
-    document.getElementById('s-solapi-sender').value = clinic.solapi_sender || '';
     document.getElementById('s-instagram').value = clinic.instagram_url || '';
     document.getElementById('s-kakao-channel').value = clinic.kakao_channel || '';
     currentSpecialty = clinic.specialty || '치과';
@@ -1463,15 +1638,11 @@ async function saveSettings() {
       emphasis: emphasisList.join(', '),
       phone: document.getElementById('s-phone').value.trim(),
       naver_map_url: document.getElementById('s-naver-map').value.trim(),
-      solapi_api_key: document.getElementById('s-solapi-key').value.trim(),
-      solapi_api_secret: (() => {
-        const v = document.getElementById('s-solapi-secret').value.trim();
-        return v === '••••••••' ? undefined : v;  // 마스킹된 값은 변경 안 함
-      })(),
-      solapi_sender: document.getElementById('s-solapi-sender').value.trim(),
       instagram_url: document.getElementById('s-instagram').value.trim(),
       kakao_channel: document.getElementById('s-kakao-channel').value.trim(),
     });
+    currentClinic = clinic;
+    currentSpecialty = clinic.specialty || '치과';
     updateClinicHeader(clinic);
     toast('설정이 저장되었습니다 ✓');
     setTimeout(() => showScreen('reply'), 800);
@@ -1490,7 +1661,6 @@ if ('serviceWorker' in navigator) {
 }
 
 // ══ Init ═══════════════════════════════════════════════
-initTheme();
 
 // Kakao OAuth 리다이렉트 처리: URL에서 token / error 파라미터 수신
 (function handleOAuthRedirect() {
@@ -1510,5 +1680,6 @@ initTheme();
 
 if (token) afterLogin();
 </script>
+</div><!-- #app -->
 </body>
 </html>

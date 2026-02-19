@@ -1,4 +1,4 @@
-const CACHE = 'clinote-v1';
+const CACHE = 'clinote-v10';
 const STATIC = ['/static/manifest.json'];
 
 self.addEventListener('install', e => {
