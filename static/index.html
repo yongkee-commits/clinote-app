@@ -864,6 +864,10 @@ textarea { resize: vertical; min-height: 80px; }
         <label>체험 기간</label>
         <span id="sub-trial-text" style="font-size:13px;color:var(--text2)"></span>
       </div>
+      <div class="env-list-row" id="sub-usage-row" style="display:none">
+        <label>체험 사용량</label>
+        <span id="sub-usage-text" style="font-size:13px;color:var(--text2)"></span>
+      </div>
       <div class="env-list-row" onclick="toast('구독 기능은 정식 출시 시 제공될 예정입니다')" style="cursor:pointer">
         <label style="cursor:pointer">구독 관리</label>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -1177,24 +1181,38 @@ async function loadSubscriptionStatus() {
     badge.textContent = (planMap[plan] || plan) + (sub.is_active && plan !== 'free' ? ' ✓' : '');
     badge.style.cssText = `font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px;${colorMap[plan] || colorMap.free}`;
 
+    const usageRow = document.getElementById('sub-usage-row');
+    const usageText = document.getElementById('sub-usage-text');
+
     if (!sub.is_active && sub.trial_ends_at) {
       const days = Math.ceil((new Date(sub.trial_ends_at) - new Date()) / 86400000);
       const used = sub.trial_count || 0;
       const remaining = Math.max(0, 30 - used);
-      if (days <= 0 || remaining === 0) {
-        trialText.textContent = days <= 0 ? '체험 기간 종료' : '체험 횟수 소진';
+      const expired = days <= 0;
+      const exhausted = remaining === 0;
+
+      // 기간 행
+      if (expired) {
+        trialText.textContent = '체험 기간 종료';
         trialText.style.color = '#e53e3e';
-        trialRow.style.display = 'flex';
       } else {
-        trialText.textContent = `체험 D-${days}일 · ${remaining}건 남음`;
-        trialText.style.color = remaining <= 5 ? '#dd6b20' : 'var(--text2)';
-        trialRow.style.display = 'flex';
+        trialText.textContent = `D-${days}일 남음`;
+        trialText.style.color = days <= 3 ? '#dd6b20' : 'var(--text2)';
       }
+      trialRow.style.display = 'flex';
+
+      // 사용량 행
+      usageText.textContent = `${used} / 30건 사용${exhausted ? ' (소진)' : ''}`;
+      usageText.style.color = exhausted ? '#e53e3e' : (remaining <= 5 ? '#dd6b20' : 'var(--text2)');
+      usageRow.style.display = 'flex';
+
     } else if (!sub.is_active && !sub.trial_ends_at) {
-      // 한 번도 생성 안 한 신규 유저
-      trialText.textContent = '14일 30건 무료 체험 가능';
+      trialText.textContent = '14일 / 30건 무료 체험 가능';
       trialText.style.color = 'var(--accent)';
       trialRow.style.display = 'flex';
+      if (usageRow) usageRow.style.display = 'none';
+    } else {
+      if (usageRow) usageRow.style.display = 'none';
     }
   } catch(e) {}
 }
