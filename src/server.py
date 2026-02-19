@@ -103,7 +103,6 @@ async def kakao_callback(code: str = "", error: str = ""):
     profile_image = profile.get("profile_image_url", profile.get("profile_image", ""))
 
     # 3. 유저 upsert + 세션 발급
-    print(f"[KAKAO_LOGIN] id={kakao_id} nickname={nickname}", flush=True)
     upsert_user(kakao_id, nickname, profile_image)
     session_token, expires_at = create_session_token()
     create_session(session_token, kakao_id, expires_at)
