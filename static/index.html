@@ -283,6 +283,14 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .gear-btn svg { width: 20px; height: 20px; }
 .gear-btn:active { opacity: 0.6; }
+#trial-badge {
+  display: none; align-items: center; gap: 4px;
+  border: none; border-radius: 20px; cursor: pointer;
+  padding: 4px 9px; margin-right: 6px; flex-shrink: 0;
+  font-size: 12px; font-weight: 700; line-height: 1;
+  background: rgba(234,88,12,0.12); color: #ea580c;
+}
+#trial-badge.danger { background: rgba(220,38,38,0.12); color: #dc2626; }
 
 /* ══ Env settings screen ════════════════════════════ */
 .env-profile-section {
@@ -526,6 +534,10 @@ textarea { resize: vertical; min-height: 80px; }
     <img src="/static/logo.svg" alt="Clinote" class="header-logo">
     <span class="header-spacer"></span>
     <span class="subtitle" id="clinic-name-header"></span>
+    <button id="trial-badge" onclick="showEnvSettings()" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span id="trial-badge-text"></span>
+    </button>
     <button class="gear-btn" onclick="showEnvSettings()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
@@ -1183,6 +1195,8 @@ async function loadSubscriptionStatus() {
 
     const usageRow = document.getElementById('sub-usage-row');
     const usageText = document.getElementById('sub-usage-text');
+    const trialBadge = document.getElementById('trial-badge');
+    const trialBadgeText = document.getElementById('trial-badge-text');
 
     if (!sub.is_active && sub.trial_ends_at) {
       const days = Math.ceil((new Date(sub.trial_ends_at) - new Date()) / 86400000);
@@ -1206,13 +1220,30 @@ async function loadSubscriptionStatus() {
       usageText.style.color = exhausted ? '#e53e3e' : (remaining <= 5 ? '#dd6b20' : 'var(--text2)');
       usageRow.style.display = 'flex';
 
+      // 헤더 뱃지 — 10건 이하 남을 때만 표시
+      if (trialBadge) {
+        if (expired || exhausted) {
+          trialBadgeText.textContent = expired ? '기간 종료' : '횟수 소진';
+          trialBadge.classList.add('danger');
+          trialBadge.style.display = 'flex';
+        } else if (remaining <= 10) {
+          trialBadgeText.textContent = `${remaining}건 남음`;
+          trialBadge.classList.remove('danger');
+          trialBadge.style.display = 'flex';
+        } else {
+          trialBadge.style.display = 'none';
+        }
+      }
+
     } else if (!sub.is_active && !sub.trial_ends_at) {
       trialText.textContent = '14일 / 30건 무료 체험 가능';
       trialText.style.color = 'var(--accent)';
       trialRow.style.display = 'flex';
       if (usageRow) usageRow.style.display = 'none';
+      if (trialBadge) trialBadge.style.display = 'none';
     } else {
       if (usageRow) usageRow.style.display = 'none';
+      if (trialBadge) trialBadge.style.display = 'none';
     }
   } catch(e) {}
 }
