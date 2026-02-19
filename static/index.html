@@ -415,6 +415,12 @@ textarea { resize: vertical; min-height: 80px; }
   display: flex; align-items: center; justify-content: center;
 }
 #promo-img { width: 100%; display: block; }
+#promo-caption {
+  display: none; background: #fff; color: #111;
+  text-align: center; font-size: 13px; font-weight: 600;
+  padding: 10px 16px; letter-spacing: -0.2px;
+}
+#promo-caption.show { display: block; }
 
 /* ══ Admin ══════════════════════════════════════════ */
 #screen-admin { background: var(--bg); }
@@ -484,6 +490,7 @@ textarea { resize: vertical; min-height: 80px; }
     <a id="promo-link" href="#" target="_blank" rel="noopener">
       <img id="promo-img" src="" alt="공지">
     </a>
+    <div id="promo-caption"></div>
   </div>
 </div>
 
@@ -662,7 +669,7 @@ textarea { resize: vertical; min-height: 80px; }
     <!-- 팝업 -->
     <div id="admin-pane-popup" class="admin-pane">
       <div class="admin-field">
-        <label>이미지 URL</label>
+        <label>이미지 URL <span style="font-weight:400;color:var(--muted);font-size:12px;">권장: 640×800px (4:5)</span></label>
         <input type="text" id="popup-image-url" placeholder="https://..." oninput="previewPopupImg()">
       </div>
       <div class="admin-field">
@@ -1289,6 +1296,13 @@ async function showPromoIfNeeded() {
     const link = document.getElementById('promo-link');
     link.href = res.link_url || '#';
     link.style.pointerEvents = res.link_url ? 'auto' : 'none';
+    const caption = document.getElementById('promo-caption');
+    if (res.title) {
+      caption.textContent = res.title;
+      caption.classList.add('show');
+    } else {
+      caption.classList.remove('show');
+    }
     document.getElementById('promo-modal').classList.add('show');
   } catch(e) {}
 }
