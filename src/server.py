@@ -20,6 +20,7 @@ from src.database import (
     delete_all_templates, delete_all_user_data,
     get_popup_config, save_popup_config,
     get_subscription, upsert_subscription,
+    check_and_use_trial,
     list_users_with_stats, get_global_stats,
 )
 from src.ai import stream_review_reply, stream_template, TEMPLATE_PROMPTS
@@ -174,6 +175,10 @@ class ReviewGenerateBody(BaseModel):
 
 @app.post("/api/review/generate")
 async def api_generate_review(body: ReviewGenerateBody, user_id: str = Depends(require_auth)):
+    allowed, reason = check_and_use_trial(user_id)
+    if not allowed:
+        msg = "체험 기간이 종료되었습니다" if reason == "trial_expired" else "체험 생성 횟수(30건)를 초과했습니다"
+        raise HTTPException(status_code=403, detail=msg)
     clinic = get_clinic(user_id)
     review_id = create_review(user_id, body.platform, body.rating, body.original_text)
     full_reply = []
@@ -228,6 +233,10 @@ class TemplateBody(BaseModel):
 
 @app.post("/api/template/generate")
 async def api_generate_template(body: TemplateBody, user_id: str = Depends(require_auth)):
+    allowed, reason = check_and_use_trial(user_id)
+    if not allowed:
+        msg = "체험 기간이 종료되었습니다" if reason == "trial_expired" else "체험 생성 횟수(30건)를 초과했습니다"
+        raise HTTPException(status_code=403, detail=msg)
     clinic = get_clinic(user_id)
     tmpl_info = TEMPLATE_PROMPTS.get(body.template_type)
     if not tmpl_info:

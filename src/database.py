@@ -121,10 +121,14 @@ def init_db():
                 subscribed_at TEXT,
                 expires_at    TEXT,
                 is_active     INTEGER NOT NULL DEFAULT 0,
+                trial_count   INTEGER NOT NULL DEFAULT 0,
                 memo          TEXT DEFAULT '',
                 updated_at    TEXT DEFAULT (datetime('now', 'localtime'))
             )
         """)
+        sub_cols = {row[1] for row in conn.execute("PRAGMA table_info(subscriptions)").fetchall()}
+        if "trial_count" not in sub_cols:
+            conn.execute("ALTER TABLE subscriptions ADD COLUMN trial_count INTEGER NOT NULL DEFAULT 0")
 
         conn.commit()
 
@@ -414,7 +418,7 @@ def get_subscription(user_id: str) -> dict[str, Any]:
         ).fetchone()
     if row is None:
         return {"user_id": user_id, "plan": "free", "is_active": 0,
-                "trial_ends_at": None, "expires_at": None, "memo": ""}
+                "trial_ends_at": None, "expires_at": None, "trial_count": 0, "memo": ""}
     return dict(row)
 
 
@@ -438,6 +442,58 @@ def upsert_subscription(user_id: str, plan: str, is_active: int,
     return get_subscription(user_id)
 
 
+TRIAL_DAYS = 14
+TRIAL_LIMIT = 30
+
+
+def check_and_use_trial(user_id: str) -> tuple[bool, str]:
+    """
+    생성 허용 여부 확인 + 허용 시 trial_count 증가.
+    반환: (allowed, reason)
+    reason: "" | "trial_expired" | "trial_limit"
+    """
+    from datetime import date, timedelta
+
+    sub = get_subscription(user_id)
+
+    # 활성 구독이면 무제한
+    if sub.get("is_active"):
+        return True, ""
+
+    trial_ends_at = sub.get("trial_ends_at")
+    trial_count = sub.get("trial_count", 0)
+
+    # 최초 사용 → 자동으로 14일 체험 시작
+    if not trial_ends_at:
+        trial_end = (date.today() + timedelta(days=TRIAL_DAYS)).isoformat()
+        with _connect() as conn:
+            conn.execute("""
+                INSERT INTO subscriptions (user_id, plan, trial_ends_at, trial_count, is_active, updated_at)
+                VALUES (?, 'free', ?, 1, 0, datetime('now', 'localtime'))
+                ON CONFLICT(user_id) DO UPDATE SET
+                    trial_ends_at = COALESCE(subscriptions.trial_ends_at, excluded.trial_ends_at),
+                    trial_count   = subscriptions.trial_count + 1,
+                    updated_at    = excluded.updated_at
+            """, (user_id, trial_end))
+        return True, ""
+
+    # 기간 만료 체크
+    if date.today() > date.fromisoformat(trial_ends_at):
+        return False, "trial_expired"
+
+    # 횟수 초과 체크
+    if trial_count >= TRIAL_LIMIT:
+        return False, "trial_limit"
+
+    # OK → 카운트 증가
+    with _connect() as conn:
+        conn.execute("""
+            UPDATE subscriptions SET trial_count = trial_count + 1, updated_at = datetime('now', 'localtime')
+            WHERE user_id = ?
+        """, (user_id,))
+    return True, ""
+
+
 # ── Admin Stats ────────────────────────────────────────
 
 def list_users_with_stats(limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
@@ -446,6 +502,7 @@ def list_users_with_stats(limit: int = 50, offset: int = 0) -> list[dict[str, An
             SELECT u.kakao_id, u.nickname, u.profile_image, u.created_at,
                    COALESCE(s.plan, 'free') AS plan,
                    COALESCE(s.is_active, 0) AS is_active,
+                   COALESCE(s.trial_count, 0) AS trial_count,
                    s.trial_ends_at, s.expires_at, s.memo,
                    (SELECT COUNT(*) FROM reviews r WHERE r.user_id = u.kakao_id) AS review_count,
                    (SELECT COUNT(*) FROM templates t WHERE t.user_id = u.kakao_id) AS template_count

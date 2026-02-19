@@ -1176,12 +1176,25 @@ async function loadSubscriptionStatus() {
     const plan = sub.plan || 'free';
     badge.textContent = (planMap[plan] || plan) + (sub.is_active && plan !== 'free' ? ' ✓' : '');
     badge.style.cssText = `font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px;${colorMap[plan] || colorMap.free}`;
-    if (sub.trial_ends_at) {
+
+    if (!sub.is_active && sub.trial_ends_at) {
       const days = Math.ceil((new Date(sub.trial_ends_at) - new Date()) / 86400000);
-      if (days > 0) {
-        trialText.textContent = `체험 D-${days}일`;
+      const used = sub.trial_count || 0;
+      const remaining = Math.max(0, 30 - used);
+      if (days <= 0 || remaining === 0) {
+        trialText.textContent = days <= 0 ? '체험 기간 종료' : '체험 횟수 소진';
+        trialText.style.color = '#e53e3e';
+        trialRow.style.display = 'flex';
+      } else {
+        trialText.textContent = `체험 D-${days}일 · ${remaining}건 남음`;
+        trialText.style.color = remaining <= 5 ? '#dd6b20' : 'var(--text2)';
         trialRow.style.display = 'flex';
       }
+    } else if (!sub.is_active && !sub.trial_ends_at) {
+      // 한 번도 생성 안 한 신규 유저
+      trialText.textContent = '14일 30건 무료 체험 가능';
+      trialText.style.color = 'var(--accent)';
+      trialRow.style.display = 'flex';
     }
   } catch(e) {}
 }
@@ -1400,7 +1413,14 @@ async function _doGenerateReply(reviewText) {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ original_text: reviewText }),
     });
-    if (!r.ok) throw new Error('생성 실패');
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      const msg = err.detail || '생성 실패';
+      outputEl.textContent = msg;
+      outputEl.classList.add('empty');
+      if (r.status === 403) loadSubscriptionStatus();
+      return;
+    }
     await _readStream(r, chunk => {
       currentReplyText += chunk;
       outputEl.textContent = currentReplyText;
@@ -1408,6 +1428,7 @@ async function _doGenerateReply(reviewText) {
     }, () => {
       copyRow.style.display = 'flex';
       outputEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      loadSubscriptionStatus();
     }, err => {
       outputEl.textContent = '오류: ' + err;
       outputEl.classList.add('empty');
@@ -1615,7 +1636,14 @@ async function _doGenerateTemplate(type, params) {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ template_type: type, params }),
     });
-    if (!r.ok) throw new Error('생성 실패');
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      const msg = err.detail || '생성 실패';
+      outputEl.textContent = msg;
+      outputEl.classList.add('empty');
+      if (r.status === 403) loadSubscriptionStatus();
+      return;
+    }
     await _readStream(r, chunk => {
       currentTmplText += chunk;
       outputEl.textContent = currentTmplText;
@@ -1623,6 +1651,7 @@ async function _doGenerateTemplate(type, params) {
     }, () => {
       copyRow.style.display = 'flex';
       outputEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      loadSubscriptionStatus();
     }, err => {
       outputEl.textContent = '오류: ' + err;
       outputEl.classList.add('empty');
@@ -2021,7 +2050,7 @@ function renderUserList() {
           <img class="user-avatar" src="${u.profile_image || ''}" onerror="this.style.display='none'">
           <div class="user-info">
             <div class="user-name">${escapeHtml(u.nickname || u.kakao_id)}</div>
-            <div class="user-meta">${u.created_at ? u.created_at.substring(0,10) : ''} · 리뷰 ${u.review_count} · 문자 ${u.template_count}</div>
+            <div class="user-meta">${u.created_at ? u.created_at.substring(0,10) : ''} · 리뷰 ${u.review_count} · 문자 ${u.template_count} · 체험 ${u.trial_count||0}/30건</div>
           </div>
           <span class="plan-badge ${u.plan === 'pro' ? 'pro' : u.plan === 'beta' ? 'beta' : ''}">${planLabel[u.plan] || u.plan}</span>
         </div>
