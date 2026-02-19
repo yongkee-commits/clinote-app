@@ -471,9 +471,36 @@ def get_global_stats() -> dict[str, Any]:
         ).fetchone()[0]
         total_reviews = conn.execute("SELECT COUNT(*) FROM reviews").fetchone()[0]
         total_templates = conn.execute("SELECT COUNT(*) FROM templates").fetchone()[0]
+        month_reviews = conn.execute(
+            "SELECT COUNT(*) FROM reviews WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', 'localtime')"
+        ).fetchone()[0]
+        month_templates = conn.execute(
+            "SELECT COUNT(*) FROM templates WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', 'localtime')"
+        ).fetchone()[0]
+        new_today = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE date(created_at) = date('now', 'localtime')"
+        ).fetchone()[0]
+        new_month = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', 'localtime')"
+        ).fetchone()[0]
+        plan_free = conn.execute(
+            "SELECT COUNT(*) FROM users u LEFT JOIN subscriptions s ON s.user_id = u.kakao_id WHERE COALESCE(s.plan, 'free') = 'free'"
+        ).fetchone()[0]
+        plan_beta = conn.execute(
+            "SELECT COUNT(*) FROM subscriptions WHERE plan = 'beta'"
+        ).fetchone()[0]
+        plan_pro = conn.execute(
+            "SELECT COUNT(*) FROM subscriptions WHERE plan = 'pro'"
+        ).fetchone()[0]
     return {
         "total_users": total_users,
         "active_subscriptions": active_subs,
         "today_generated": today_reviews + today_templates,
         "total_generated": total_reviews + total_templates,
+        "month_generated": month_reviews + month_templates,
+        "new_users_today": new_today,
+        "new_users_month": new_month,
+        "plan_free": plan_free,
+        "plan_beta": plan_beta,
+        "plan_pro": plan_pro,
     }

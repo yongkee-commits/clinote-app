@@ -422,6 +422,13 @@ textarea { resize: vertical; min-height: 80px; }
 }
 #promo-caption.show { display: block; }
 
+.ufilter {
+  padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border);
+  background: transparent; color: var(--text2); font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.ufilter.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
 /* ══ Admin ══════════════════════════════════════════ */
 #screen-admin { background: var(--bg); }
 .admin-header {
@@ -658,12 +665,31 @@ textarea { resize: vertical; min-height: 80px; }
       <div class="stat-grid">
         <div class="stat-card"><div class="stat-val" id="stat-users">-</div><div class="stat-label">총 가입자</div></div>
         <div class="stat-card"><div class="stat-val" id="stat-subs">-</div><div class="stat-label">활성 구독</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-new-today">-</div><div class="stat-label">오늘 신규</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-new-month">-</div><div class="stat-label">이번달 신규</div></div>
         <div class="stat-card"><div class="stat-val" id="stat-today">-</div><div class="stat-label">오늘 생성</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-month">-</div><div class="stat-label">이번달 생성</div></div>
         <div class="stat-card"><div class="stat-val" id="stat-total">-</div><div class="stat-label">누적 생성</div></div>
+      </div>
+      <div style="padding:16px 0 8px;font-size:13px;font-weight:600;color:var(--text2)">플랜 분포</div>
+      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card"><div class="stat-val" id="stat-free">-</div><div class="stat-label">무료</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-beta">-</div><div class="stat-label">베타</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-pro">-</div><div class="stat-label">Pro</div></div>
       </div>
     </div>
     <!-- 회원 -->
     <div id="admin-pane-users" class="admin-pane">
+      <div style="display:flex;gap:8px;padding:4px 0 12px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="user-search" placeholder="닉네임 검색" oninput="filterUsers()"
+          style="flex:1;min-width:120px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px">
+        <div style="display:flex;gap:4px">
+          <button class="ufilter active" data-plan="all" onclick="setUserFilter(this,'all')">전체</button>
+          <button class="ufilter" data-plan="free" onclick="setUserFilter(this,'free')">무료</button>
+          <button class="ufilter" data-plan="beta" onclick="setUserFilter(this,'beta')">베타</button>
+          <button class="ufilter" data-plan="pro" onclick="setUserFilter(this,'pro')">Pro</button>
+        </div>
+      </div>
       <div id="admin-user-list"><div style="color:var(--text2);font-size:14px">불러오는 중...</div></div>
     </div>
     <!-- 팝업 -->
@@ -1941,8 +1967,14 @@ async function loadAdminStats() {
     const s = await api('GET', '/api/admin/stats');
     document.getElementById('stat-users').textContent = s.total_users;
     document.getElementById('stat-subs').textContent = s.active_subscriptions;
+    document.getElementById('stat-new-today').textContent = s.new_users_today;
+    document.getElementById('stat-new-month').textContent = s.new_users_month;
     document.getElementById('stat-today').textContent = s.today_generated;
+    document.getElementById('stat-month').textContent = s.month_generated;
     document.getElementById('stat-total').textContent = s.total_generated;
+    document.getElementById('stat-free').textContent = s.plan_free;
+    document.getElementById('stat-beta').textContent = s.plan_beta;
+    document.getElementById('stat-pro').textContent = s.plan_pro;
   } catch(e) {}
 }
 
@@ -1951,8 +1983,39 @@ async function loadAdminUsers() {
   list.innerHTML = '<div style="color:var(--text2);font-size:14px">불러오는 중...</div>';
   try {
     const res = await api('GET', '/api/admin/users?limit=100');
-    const planLabel = { free: '무료', beta: '베타', pro: 'Pro' };
-    list.innerHTML = res.items.map(u => `
+    allUsers = res.items;
+    renderUserList();
+  } catch(e) {
+    list.innerHTML = '<div style="color:red">오류: ' + e.message + '</div>';
+  }
+}
+
+let allUsers = [];
+let activePlanFilter = 'all';
+
+function setUserFilter(btn, plan) {
+  activePlanFilter = plan;
+  document.querySelectorAll('.ufilter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderUserList();
+}
+
+function filterUsers() { renderUserList(); }
+
+function renderUserList() {
+  const list = document.getElementById('admin-user-list');
+  const q = (document.getElementById('user-search')?.value || '').toLowerCase();
+  const planLabel = { free: '무료', beta: '베타', pro: 'Pro' };
+  const filtered = allUsers.filter(u => {
+    if (activePlanFilter !== 'all' && u.plan !== activePlanFilter) return false;
+    if (q && !((u.nickname || u.kakao_id) + '').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if (!filtered.length) {
+    list.innerHTML = '<div style="color:var(--text2);font-size:14px;padding:12px 0">검색 결과 없음</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(u => `
       <div class="user-row" onclick="toggleUserForm('${u.kakao_id}')">
         <div class="user-row-top">
           <img class="user-avatar" src="${u.profile_image || ''}" onerror="this.style.display='none'">
@@ -1962,7 +2025,7 @@ async function loadAdminUsers() {
           </div>
           <span class="plan-badge ${u.plan === 'pro' ? 'pro' : u.plan === 'beta' ? 'beta' : ''}">${planLabel[u.plan] || u.plan}</span>
         </div>
-        <div class="user-sub-form" id="form-${u.kakao_id}">
+        <div class="user-sub-form" id="form-${u.kakao_id}" onclick="event.stopPropagation()">
           <div class="admin-field">
             <label>플랜</label>
             <select id="plan-${u.kakao_id}">
@@ -1978,8 +2041,12 @@ async function loadAdminUsers() {
             </label>
           </div>
           <div class="admin-field">
-            <label>체험 만료일 (YYYY-MM-DD, 선택)</label>
-            <input type="text" id="trial-${u.kakao_id}" value="${u.trial_ends_at||''}" placeholder="2026-03-01">
+            <label>체험 만료일</label>
+            <input type="date" id="trial-${u.kakao_id}" value="${u.trial_ends_at||''}">
+          </div>
+          <div class="admin-field">
+            <label>구독 만료일 <span style="font-weight:400;font-size:12px;color:var(--muted)">(비워두면 영구)</span></label>
+            <input type="date" id="expires-${u.kakao_id}" value="${u.expires_at||''}">
           </div>
           <div class="admin-field">
             <label>메모</label>
@@ -1989,9 +2056,6 @@ async function loadAdminUsers() {
         </div>
       </div>
     `).join('');
-  } catch(e) {
-    list.innerHTML = '<div style="color:red">오류: ' + e.message + '</div>';
-  }
 }
 
 function toggleUserForm(kakaoId) {
@@ -2004,9 +2068,15 @@ async function saveUserSub(kakaoId, e) {
   const plan = document.getElementById('plan-' + kakaoId).value;
   const isActive = document.getElementById('active-' + kakaoId).checked ? 1 : 0;
   const trial = document.getElementById('trial-' + kakaoId).value.trim() || null;
+  const expires = document.getElementById('expires-' + kakaoId).value.trim() || null;
   const memo = document.getElementById('memo-' + kakaoId).value.trim();
   try {
-    await api('PUT', `/api/admin/users/${kakaoId}/subscription`, { plan, is_active: isActive, trial_ends_at: trial, memo });
+    await api('PUT', `/api/admin/users/${kakaoId}/subscription`, {
+      plan, is_active: isActive, trial_ends_at: trial, expires_at: expires, memo
+    });
+    // allUsers 캐시 업데이트
+    const u = allUsers.find(x => x.kakao_id === kakaoId);
+    if (u) { u.plan = plan; u.is_active = isActive; u.trial_ends_at = trial; u.expires_at = expires; u.memo = memo; }
     toast('저장되었습니다 ✓');
   } catch(err) {
     toast('저장 실패: ' + err.message);
