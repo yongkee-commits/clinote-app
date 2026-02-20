@@ -158,3 +158,33 @@ async def stream_template(clinic: dict, template_type: str, params: dict) -> Asy
     ) as stream:
         async for text in stream.text_stream:
             yield text
+
+
+async def generate_template_batch(clinic: dict, template_type: str, batch_params: list[dict]) -> list[str]:
+    """
+    CSV 일괄 생성용: 여러 개의 params를 받아서 한번에 생성 (스트리밍 없음)
+    batch_params: [{"name": "김철수", "appt_date": "2026-02-25", ...}, ...]
+    반환: ["생성된 문자 1", "생성된 문자 2", ...]
+    """
+    results = []
+
+    for params in batch_params:
+        system_prompt, user_prompt = _build_template_prompt(clinic, template_type, params)
+
+        # Non-streaming generation
+        response = await client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=800,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+
+        # Extract text from response
+        text = ""
+        for block in response.content:
+            if block.type == "text":
+                text += block.text
+
+        results.append(text.strip())
+
+    return results

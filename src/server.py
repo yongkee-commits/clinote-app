@@ -1,6 +1,8 @@
 import json
+import csv
+import io
 import httpx
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -23,7 +25,8 @@ from src.database import (
     check_and_use_trial,
     list_users_with_stats, get_global_stats,
 )
-from src.ai import stream_review_reply, stream_template, TEMPLATE_PROMPTS
+from src.ai import stream_review_reply, stream_template, generate_template_batch, TEMPLATE_PROMPTS
+from src.sms import send_sms_batch
 
 app = FastAPI(title="Clinote")
 
@@ -266,6 +269,123 @@ async def api_generate_template(body: TemplateBody, user_id: str = Depends(requi
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@app.post("/api/template/batch-generate")
+async def api_batch_generate_template(
+    file: UploadFile = File(...),
+    template_type: str = Form(...),
+    send_sms: bool = Form(False),
+    user_id: str = Depends(require_auth)
+):
+    """
+    CSV 파일 업로드 → AI 일괄 생성 → (선택) SMS 발송
+
+    CSV 형식 예시:
+    이름,전화번호,예약일,예약시간,진료내용,메모
+    김철수,01012345678,2026-02-25,14:00,임플란트,
+    """
+    # Check trial
+    allowed, reason = check_and_use_trial(user_id)
+    if not allowed:
+        msg = "체험 기간이 종료되었습니다" if reason == "trial_expired" else "체험 생성 횟수(30건)를 초과했습니다"
+        raise HTTPException(status_code=403, detail=msg)
+
+    clinic = get_clinic(user_id)
+    tmpl_info = TEMPLATE_PROMPTS.get(template_type)
+    if not tmpl_info:
+        raise HTTPException(status_code=400, detail="알 수 없는 템플릿 유형")
+
+    # Parse CSV
+    content = await file.read()
+    text = content.decode('utf-8-sig')  # Handle BOM
+    reader = csv.DictReader(io.StringIO(text))
+
+    batch_params = []
+    rows_data = []
+
+    for row in reader:
+        # Build params dict from CSV columns
+        params = {}
+        phone = ""
+
+        # Map CSV columns to template params
+        for key, value in row.items():
+            key_lower = key.strip().lower()
+            value_clean = value.strip()
+
+            if key_lower in ['이름', 'name']:
+                params['name'] = value_clean
+            elif key_lower in ['전화번호', 'phone', 'tel']:
+                phone = value_clean
+            elif key_lower in ['예약일', 'appt_date', 'date']:
+                params['appt_date'] = value_clean
+            elif key_lower in ['예약시간', 'appt_time', 'time']:
+                params['appt_time'] = value_clean
+            elif key_lower in ['진료내용', 'treatment', 'content']:
+                params['treatment'] = value_clean
+            elif key_lower in ['메모', 'note', 'memo']:
+                params['note'] = value_clean
+            elif key_lower in ['주제', 'topic']:
+                params['topic'] = value_clean
+            elif key_lower in ['플랫폼', 'platform']:
+                params['platform'] = value_clean
+
+        batch_params.append(params)
+        rows_data.append({
+            "params": params,
+            "phone": phone,
+            "name": params.get('name', '고객')
+        })
+
+    if not batch_params:
+        raise HTTPException(status_code=400, detail="CSV 파일이 비어있거나 형식이 잘못되었습니다")
+
+    # Generate messages
+    try:
+        generated_messages = await generate_template_batch(clinic, template_type, batch_params)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI 생성 오류: {str(e)}")
+
+    # Combine results
+    results = []
+    for i, (row_data, message) in enumerate(zip(rows_data, generated_messages)):
+        results.append({
+            "index": i + 1,
+            "name": row_data["name"],
+            "phone": row_data["phone"],
+            "params": row_data["params"],
+            "message": message
+        })
+
+    # Send SMS if requested
+    sms_result = None
+    if send_sms:
+        api_key = clinic.get("solapi_api_key", "")
+        api_secret = clinic.get("solapi_api_secret", "")
+        sender = clinic.get("solapi_sender", "")
+
+        if not all([api_key, api_secret, sender]):
+            raise HTTPException(status_code=400, detail="SMS 발송을 위해 병원 정보에서 Solapi 설정을 먼저 등록해주세요")
+
+        sms_messages = [
+            {"to": row_data["phone"], "text": message}
+            for row_data, message in zip(rows_data, generated_messages)
+            if row_data["phone"]
+        ]
+
+        if sms_messages:
+            try:
+                sms_result = await send_sms_batch(api_key, api_secret, sender, sms_messages)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"SMS 발송 오류: {str(e)}")
+
+    return {
+        "success": True,
+        "total": len(results),
+        "results": results,
+        "sms": sms_result
+    }
 
 
 # ── Template history ──────────────────────────────────

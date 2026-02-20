@@ -587,6 +587,15 @@ textarea { resize: vertical; min-height: 80px; }
   </div>
   <div class="scroll-area">
     <p class="settings-header">환자 안내문, 공지, SNS 캡션을 AI로 빠르게 생성하세요.</p>
+
+    <!-- 탭 -->
+    <div class="filter-tabs" style="margin-bottom: 20px;">
+      <button class="filter-tab active" id="tmpl-tab-single" onclick="switchTemplateTab('single')">개별 생성</button>
+      <button class="filter-tab" id="tmpl-tab-batch" onclick="switchTemplateTab('batch')">일괄 생성 (CSV)</button>
+    </div>
+
+    <!-- 개별 생성 탭 -->
+    <div id="tmpl-single-tab">
     <div class="section-title">유형 선택</div>
     <div class="tmpl-grid">
       <div class="tmpl-card" data-type="first_visit" onclick="selectTemplate('first_visit')">
@@ -642,6 +651,49 @@ textarea { resize: vertical; min-height: 80px; }
         </div>
       </div>
     </div>
+    </div><!-- end tmpl-single-tab -->
+
+    <!-- 일괄 생성 (CSV) 탭 -->
+    <div id="tmpl-batch-tab" style="display:none">
+      <div class="section-title">CSV 파일 업로드</div>
+      <p style="font-size: 13px; color: var(--text2); margin-bottom: 16px;">환자 목록 CSV 파일을 업로드하면 한번에 문자를 생성합니다.</p>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">템플릿 선택</label>
+        <select id="batch-template-type" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+          <option value="first_visit">초진 안내 문자</option>
+          <option value="after_care">치료 후 주의사항</option>
+          <option value="recall">재내원 유도 문자</option>
+          <option value="noshow">노쇼 방지 리마인더</option>
+          <option value="holiday">휴진 공지</option>
+          <option value="sns">SNS 캡션</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">CSV 파일</label>
+        <input type="file" id="batch-csv-file" accept=".csv" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+        <p style="font-size: 12px; color: var(--text2); margin-top: 6px;">CSV 형식: 이름, 전화번호, 예약일, 예약시간, 진료내용, 메모</p>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" id="batch-send-sms" style="width: 18px; height: 18px;">
+          <span style="font-size: 14px;">생성 후 즉시 SMS 발송 (Solapi 연동 필요)</span>
+        </label>
+      </div>
+
+      <button class="btn btn-primary" onclick="batchGenerate()" style="width: 100%; margin-bottom: 20px;">
+        <span class="spinner" id="batch-spinner" style="display:none"></span>
+        <span id="batch-btn-text">일괄 생성하기</span>
+      </button>
+
+      <div id="batch-results" style="display:none">
+        <div class="section-title">생성 결과</div>
+        <div id="batch-results-list"></div>
+      </div>
+    </div><!-- end tmpl-batch-tab -->
+
   </div>
 </div>
 
@@ -1290,11 +1342,16 @@ async function deleteAccount() {
 }
 
 // ══ Utilities ══════════════════════════════════════════
-async function api(method, path, body = null) {
+async function api(method, path, body = null, isFormData = false) {
   const opts = { method, headers: { 'Authorization': `Bearer ${token}` } };
   if (body !== null) {
-    opts.headers['Content-Type'] = 'application/json';
-    opts.body = JSON.stringify(body);
+    if (isFormData) {
+      // FormData: let browser set Content-Type with boundary
+      opts.body = body;
+    } else {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
   }
   const r = await fetch(path, opts);
   if (r.status === 401) {
@@ -1731,6 +1788,93 @@ async function _doGenerateTemplate(type, params) {
 function copyTmpl() {
   if (!currentTmplText) return;
   navigator.clipboard.writeText(currentTmplText).then(() => toast('복사되었습니다 ✓'));
+}
+
+// ══ Template Batch (CSV) ═══════════════════════════════
+
+function switchTemplateTab(tab) {
+  document.querySelectorAll('#screen-template .filter-tab').forEach(t => t.classList.remove('active'));
+  if (tab === 'single') {
+    document.getElementById('tmpl-tab-single').classList.add('active');
+    document.getElementById('tmpl-single-tab').style.display = '';
+    document.getElementById('tmpl-batch-tab').style.display = 'none';
+  } else {
+    document.getElementById('tmpl-tab-batch').classList.add('active');
+    document.getElementById('tmpl-single-tab').style.display = 'none';
+    document.getElementById('tmpl-batch-tab').style.display = '';
+  }
+}
+
+async function batchGenerate() {
+  const fileInput = document.getElementById('batch-csv-file');
+  const templateType = document.getElementById('batch-template-type').value;
+  const sendSms = document.getElementById('batch-send-sms').checked;
+  const spinner = document.getElementById('batch-spinner');
+  const btnText = document.getElementById('batch-btn-text');
+  const resultsDiv = document.getElementById('batch-results');
+  const resultsListDiv = document.getElementById('batch-results-list');
+
+  if (!fileInput.files || !fileInput.files[0]) {
+    alert('CSV 파일을 선택해주세요');
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('template_type', templateType);
+  formData.append('send_sms', sendSms);
+
+  spinner.style.display = '';
+  btnText.textContent = '생성 중...';
+
+  try {
+    const r = await api('POST', '/api/template/batch-generate', formData, true); // true = FormData
+
+    if (!r || !r.results) {
+      throw new Error('생성 실패');
+    }
+
+    // Display results
+    resultsDiv.style.display = '';
+    let html = '';
+
+    if (r.sms && r.sms.success > 0) {
+      html += `<div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; margin-bottom: 16px; font-size: 14px; color: #166534;">
+        ✅ SMS 발송 완료: ${r.sms.success}건 성공, ${r.sms.failed}건 실패
+      </div>`;
+    }
+
+    r.results.forEach(item => {
+      const phoneDisplay = item.phone || '전화번호 없음';
+      html += `
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+            <div>
+              <strong style="font-size: 15px;">${item.index}. ${item.name}</strong>
+              <div style="font-size: 13px; color: var(--text2); margin-top: 4px;">${phoneDisplay}</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="copyBatchMessage(\`${item.message.replace(/`/g, '\\`')}\`)">복사</button>
+          </div>
+          <div style="background: var(--card2); padding: 12px; border-radius: 6px; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${item.message}</div>
+        </div>
+      `;
+    });
+
+    resultsListDiv.innerHTML = html;
+    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    loadSubscriptionStatus();
+
+  } catch (e) {
+    alert('오류: ' + (e.message || '일괄 생성 실패'));
+  } finally {
+    spinner.style.display = 'none';
+    btnText.textContent = '일괄 생성하기';
+  }
+}
+
+function copyBatchMessage(text) {
+  navigator.clipboard.writeText(text).then(() => toast('복사되었습니다 ✓'));
 }
 
 // ══ History ════════════════════════════════════════════

@@ -48,3 +48,34 @@ async def send_sms(api_key: str, api_secret: str, sender: str, receiver: str, te
         raise RuntimeError(f"솔라피 오류 ({r.status_code}): {detail}")
 
     return r.json()
+
+
+async def send_sms_batch(api_key: str, api_secret: str, sender: str, messages: list[dict]) -> dict:
+    """
+    일괄 SMS 발송.
+    messages: [{"to": "01012345678", "text": "메시지 내용"}, ...]
+    반환: {"success": 3, "failed": 0, "results": [...]}
+    """
+    sender = sender.replace("-", "").replace(" ", "")
+
+    results = []
+    success_count = 0
+    failed_count = 0
+
+    for msg in messages:
+        receiver = msg["to"].replace("-", "").replace(" ", "")
+        text = msg["text"]
+
+        try:
+            result = await send_sms(api_key, api_secret, sender, receiver, text)
+            results.append({"to": msg["to"], "status": "success", "result": result})
+            success_count += 1
+        except Exception as e:
+            results.append({"to": msg["to"], "status": "failed", "error": str(e)})
+            failed_count += 1
+
+    return {
+        "success": success_count,
+        "failed": failed_count,
+        "results": results
+    }
