@@ -376,6 +376,18 @@ async def api_admin_save_popup(body: PopupBody, admin_id: str = Depends(require_
     return save_popup_config(body.image_url, body.link_url, body.title, body.active)
 
 
+# ── Legal pages ───────────────────────────────────────
+
+@app.get("/privacy")
+async def privacy():
+    return FileResponse(str(STATIC_DIR / "privacy.html"))
+
+
+@app.get("/terms")
+async def terms():
+    return FileResponse(str(STATIC_DIR / "terms.html"))
+
+
 # ── SPA fallback ──────────────────────────────────────
 
 @app.get("/admin")
