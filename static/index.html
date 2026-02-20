@@ -397,12 +397,11 @@ textarea { resize: vertical; min-height: 80px; }
   background: var(--bg);
 }
 .filter-tab {
-  flex: 1;
   padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
   background: none; border: 1px solid var(--border); color: var(--text2);
   cursor: pointer; transition: all 0.15s;
   white-space: nowrap;
-  text-align: center;
+  flex-shrink: 0;
 }
 .filter-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
