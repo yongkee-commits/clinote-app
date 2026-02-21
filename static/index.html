@@ -396,7 +396,6 @@ textarea { resize: vertical; min-height: 80px; }
 /* ══ History filter tabs ════════════════════════════ */
 .filter-tabs {
   display: flex; gap: 8px; padding: 12px 20px;
-  background: var(--bg);
 }
 .filter-tab {
   padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
@@ -689,6 +688,14 @@ textarea { resize: vertical; min-height: 80px; }
     vertical-align: top;
   }
 
+  .data-table td button {
+    margin-bottom: 6px;
+  }
+
+  .data-table td button:last-child {
+    margin-bottom: 0;
+  }
+
   .data-table tbody tr:hover {
     background: var(--card2);
   }
@@ -705,6 +712,7 @@ textarea { resize: vertical; min-height: 80px; }
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .type-badge.review {
