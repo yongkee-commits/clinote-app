@@ -496,10 +496,317 @@ textarea { resize: vertical; min-height: 80px; }
 .admin-toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .popup-preview { margin-top: 12px; border-radius: 12px; overflow: hidden; max-width: 200px; }
 .popup-preview img { width: 100%; display: block; }
+
+/* ══ Responsive Utilities ═══════════════════════════ */
+.desktop-only { display: none; }
+.mobile-only { display: block; }
+
+/* ══ PC Desktop (>= 1024px) ═════════════════════════ */
+@media (min-width: 1024px) {
+  /* Utilities */
+  .desktop-only { display: block; }
+  .mobile-only { display: none; }
+
+  /* App container */
+  body { background: var(--bg); }
+  #app {
+    max-width: 100%;
+    flex-direction: row;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    display: flex !important;
+    flex-direction: column;
+    width: 240px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    flex-shrink: 0;
+  }
+
+  .sidebar-header {
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .sidebar-logo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .sidebar-title {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .sidebar-nav {
+    flex: 1;
+    padding: 16px 12px;
+    overflow-y: auto;
+  }
+
+  .sidebar-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text2);
+    transition: all 0.15s;
+    margin-bottom: 4px;
+    text-align: left;
+  }
+
+  .sidebar-btn svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-btn:hover {
+    background: var(--card2);
+  }
+
+  .sidebar-btn.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .sidebar-footer {
+    padding: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Main content area */
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* Hide mobile navigation */
+  .bottom-nav {
+    display: none !important;
+  }
+
+  /* Hide mobile headers (sidebar replaces them) */
+  .screen > .header {
+    display: none;
+  }
+
+  /* Page header (PC) */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+  }
+
+  .page-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Filter panel (PC) */
+  .filter-panel {
+    display: flex;
+    gap: 12px;
+    padding: 16px 32px;
+    background: var(--card2);
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+
+  .filter-panel input[type="text"] {
+    flex: 1;
+    max-width: 300px;
+  }
+
+  .filter-panel select {
+    width: auto;
+    min-width: 150px;
+  }
+
+  /* Data table */
+  .data-table-container {
+    padding: 24px 32px;
+    overflow-x: auto;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .data-table thead {
+    background: var(--card2);
+    border-bottom: 2px solid var(--border);
+  }
+
+  .data-table th {
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .data-table td {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    vertical-align: top;
+  }
+
+  .data-table tbody tr:hover {
+    background: var(--card2);
+  }
+
+  .data-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Type badge */
+  .type-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .type-badge.review {
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+
+  .type-badge.template {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  /* 2-column layout */
+  .desktop-2col {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 24px;
+    padding: 24px 32px;
+    min-height: calc(100vh - 140px);
+  }
+
+  /* Batch settings panel */
+  .batch-settings {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    height: fit-content;
+    position: sticky;
+    top: 24px;
+  }
+
+  .batch-results {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    overflow-y: auto;
+    max-height: calc(100vh - 180px);
+  }
+
+  /* CSV preview */
+  .csv-preview {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--card2);
+    border-radius: var(--radius);
+  }
+
+  .csv-preview-table {
+    overflow-x: auto;
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 12px 0;
+  }
+
+  .csv-preview-table .data-table {
+    font-size: 12px;
+  }
+
+  .csv-info {
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 8px;
+  }
+}
 </style>
 </head>
 <body>
 <div id="app">
+
+<!-- ══════════ SIDEBAR (PC only) ═══════════════════════ -->
+<aside class="sidebar" id="sidebar" style="display:none">
+  <div class="sidebar-header">
+    <img src="/static/logo.svg" alt="Clinote" class="sidebar-logo">
+    <h2 class="sidebar-title">Clinote</h2>
+  </div>
+  <nav class="sidebar-nav">
+    <button class="sidebar-btn" id="sidebar-reply" onclick="showScreen('reply')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      <span>리뷰 답변</span>
+    </button>
+    <button class="sidebar-btn" id="sidebar-template" onclick="showScreen('template')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>문자·공지</span>
+    </button>
+    <button class="sidebar-btn" id="sidebar-history" onclick="showScreen('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+      <span>이력</span>
+    </button>
+    <button class="sidebar-btn" id="sidebar-clinic" onclick="showScreen('clinic')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      <span>병원정보</span>
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="sidebar-btn" onclick="showEnvSettings()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>환경설정</span>
+    </button>
+  </div>
+</aside>
 
 <!-- ══════════ PROMO MODAL ═════════════════════════════ -->
 <div id="promo-modal">
@@ -512,6 +819,9 @@ textarea { resize: vertical; min-height: 80px; }
     <div id="promo-caption"></div>
   </div>
 </div>
+
+<!-- ══════════ MAIN CONTENT ════════════════════════════ -->
+<div class="main-content">
 
 <!-- ══════════ LOGIN ══════════════════════════════════ -->
 <div id="screen-login" class="screen active">
@@ -656,42 +966,115 @@ textarea { resize: vertical; min-height: 80px; }
 
     <!-- 일괄 생성 (CSV) 탭 -->
     <div id="tmpl-batch-tab" style="display:none">
-      <div class="section-title">CSV 파일 업로드</div>
-      <p style="font-size: 13px; color: var(--text2); margin-bottom: 16px;">환자 목록 CSV 파일을 업로드하면 한번에 문자를 생성합니다.</p>
+      <!-- PC: 2-column layout -->
+      <div class="desktop-2col">
+        <!-- Left: Settings -->
+        <div class="batch-settings">
+          <div class="section-title">CSV 파일 업로드</div>
+          <p style="font-size: 13px; color: var(--text2); margin-bottom: 16px;">환자 목록 CSV 파일을 업로드하면 한번에 문자를 생성합니다.</p>
 
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">템플릿 선택</label>
-        <select id="batch-template-type" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
-          <option value="first_visit">초진 안내 문자</option>
-          <option value="after_care">치료 후 주의사항</option>
-          <option value="recall">재내원 유도 문자</option>
-          <option value="noshow">노쇼 방지 리마인더</option>
-          <option value="holiday">휴진 공지</option>
-          <option value="sns">SNS 캡션</option>
-        </select>
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">템플릿 선택</label>
+            <select id="batch-template-type" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+              <option value="first_visit">초진 안내 문자</option>
+              <option value="after_care">치료 후 주의사항</option>
+              <option value="recall">재내원 유도 문자</option>
+              <option value="noshow">노쇼 방지 리마인더</option>
+              <option value="holiday">휴진 공지</option>
+              <option value="sns">SNS 캡션</option>
+            </select>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">CSV 파일</label>
+            <input type="file" id="batch-csv-file" accept=".csv" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;" onchange="previewCSV()">
+            <p style="font-size: 12px; color: var(--text2); margin-top: 6px;">CSV 형식: 이름, 전화번호, 예약일, 예약시간, 진료내용, 메모</p>
+          </div>
+
+          <!-- CSV Preview (PC only) -->
+          <div id="csv-preview" class="csv-preview desktop-only" style="display:none">
+            <div class="section-title">파일 미리보기</div>
+            <div class="csv-preview-table">
+              <table class="data-table" id="csv-preview-table"></table>
+            </div>
+            <p class="csv-info">총 <strong id="csv-row-count">0</strong>건</p>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="batch-send-sms" style="width: 18px; height: 18px;">
+              <span style="font-size: 14px;">생성 후 즉시 SMS 발송 (Solapi 연동 필요)</span>
+            </label>
+          </div>
+
+          <button class="btn btn-primary" onclick="batchGenerate()" style="width: 100%; margin-bottom: 20px;">
+            <span class="spinner" id="batch-spinner" style="display:none"></span>
+            <span id="batch-btn-text">일괄 생성하기</span>
+          </button>
+        </div>
+
+        <!-- Right: Results Table (PC only) -->
+        <div class="batch-results desktop-only">
+          <div class="section-title">생성 결과</div>
+          <div id="batch-results-table-container" style="display:none">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>번호</th>
+                  <th>이름</th>
+                  <th>전화번호</th>
+                  <th>문자 내용</th>
+                  <th>작업</th>
+                </tr>
+              </thead>
+              <tbody id="batch-results-tbody"></tbody>
+            </table>
+          </div>
+          <div id="batch-results-empty" style="text-align:center;padding:48px;color:var(--text2)">
+            일괄 생성 후 결과가 여기에 표시됩니다
+          </div>
+        </div>
       </div>
 
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">CSV 파일</label>
-        <input type="file" id="batch-csv-file" accept=".csv" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
-        <p style="font-size: 12px; color: var(--text2); margin-top: 6px;">CSV 형식: 이름, 전화번호, 예약일, 예약시간, 진료내용, 메모</p>
-      </div>
+      <!-- Mobile: Original layout -->
+      <div class="mobile-only" style="padding: 20px;">
+        <div class="section-title">CSV 파일 업로드</div>
+        <p style="font-size: 13px; color: var(--text2); margin-bottom: 16px;">환자 목록 CSV 파일을 업로드하면 한번에 문자를 생성합니다.</p>
 
-      <div style="margin-bottom: 20px;">
-        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-          <input type="checkbox" id="batch-send-sms" style="width: 18px; height: 18px;">
-          <span style="font-size: 14px;">생성 후 즉시 SMS 발송 (Solapi 연동 필요)</span>
-        </label>
-      </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">템플릿 선택</label>
+          <select id="batch-template-type-mobile" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+            <option value="first_visit">초진 안내 문자</option>
+            <option value="after_care">치료 후 주의사항</option>
+            <option value="recall">재내원 유도 문자</option>
+            <option value="noshow">노쇼 방지 리마인더</option>
+            <option value="holiday">휴진 공지</option>
+            <option value="sns">SNS 캡션</option>
+          </select>
+        </div>
 
-      <button class="btn btn-primary" onclick="batchGenerate()" style="width: 100%; margin-bottom: 20px;">
-        <span class="spinner" id="batch-spinner" style="display:none"></span>
-        <span id="batch-btn-text">일괄 생성하기</span>
-      </button>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">CSV 파일</label>
+          <input type="file" id="batch-csv-file-mobile" accept=".csv" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+          <p style="font-size: 12px; color: var(--text2); margin-top: 6px;">CSV 형식: 이름, 전화번호, 예약일, 예약시간, 진료내용, 메모</p>
+        </div>
 
-      <div id="batch-results" style="display:none">
-        <div class="section-title">생성 결과</div>
-        <div id="batch-results-list"></div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="batch-send-sms-mobile" style="width: 18px; height: 18px;">
+            <span style="font-size: 14px;">생성 후 즉시 SMS 발송</span>
+          </label>
+        </div>
+
+        <button class="btn btn-primary" onclick="batchGenerateMobile()" style="width: 100%; margin-bottom: 20px;">
+          <span class="spinner" id="batch-spinner-mobile" style="display:none"></span>
+          <span>일괄 생성하기</span>
+        </button>
+
+        <div id="batch-results" style="display:none">
+          <div class="section-title">생성 결과</div>
+          <div id="batch-results-list"></div>
+        </div>
       </div>
     </div><!-- end tmpl-batch-tab -->
 
@@ -700,19 +1083,64 @@ textarea { resize: vertical; min-height: 80px; }
 
 <!-- ══════════ HISTORY ═════════════════════════════════ -->
 <div id="screen-history" class="screen">
-  <div class="header">
+  <!-- Mobile header -->
+  <div class="header mobile-only">
     <h1>이력</h1>
     <button class="gear-btn" onclick="showEnvSettings()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
   </div>
-  <div class="filter-tabs">
+
+  <!-- PC page header -->
+  <div class="page-header desktop-only">
+    <h1>이력</h1>
+  </div>
+
+  <!-- PC filter panel -->
+  <div class="filter-panel desktop-only">
+    <input type="text" id="history-search" placeholder="리뷰 내용 검색..." oninput="filterHistory()">
+    <div class="filter-tabs">
+      <button class="filter-tab active" id="filter-all-desktop" onclick="setHistoryFilter('all')">전체</button>
+      <button class="filter-tab" id="filter-review-desktop" onclick="setHistoryFilter('review')">리뷰 답변</button>
+      <button class="filter-tab" id="filter-template-desktop" onclick="setHistoryFilter('template')">문자·공지</button>
+    </div>
+    <select id="history-sort" onchange="sortHistory()">
+      <option value="date_desc">최신순</option>
+      <option value="date_asc">오래된순</option>
+    </select>
+  </div>
+
+  <!-- Mobile filter tabs -->
+  <div class="filter-tabs mobile-only">
     <button class="filter-tab active" id="filter-all" onclick="setHistoryFilter('all')">전체</button>
     <button class="filter-tab" id="filter-review" onclick="setHistoryFilter('review')">리뷰 답변</button>
     <button class="filter-tab" id="filter-template" onclick="setHistoryFilter('template')">문자·공지</button>
   </div>
+
   <div class="scroll-area" id="history-list">
-    <div class="empty-state"><div class="emoji">📋</div>이력이 없습니다</div>
+    <!-- Mobile: card view -->
+    <div class="history-cards mobile-only" id="history-cards">
+      <div class="empty-state"><div class="emoji">📋</div>이력이 없습니다</div>
+    </div>
+
+    <!-- PC: table view -->
+    <div class="data-table-container desktop-only">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>유형</th>
+            <th>날짜/시간</th>
+            <th>원본</th>
+            <th>생성 결과</th>
+            <th>글자수</th>
+            <th>작업</th>
+          </tr>
+        </thead>
+        <tbody id="history-table-body">
+          <tr><td colspan="6" style="text-align:center;padding:48px;color:var(--text2)">이력이 없습니다</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -1002,6 +1430,8 @@ textarea { resize: vertical; min-height: 80px; }
     </div>
   </div>
 </div>
+
+</div><!-- end main-content -->
 
 <!-- ══════════ BOTTOM NAV ══════════════════════════════ -->
 <nav class="bottom-nav" id="bottom-nav">
@@ -1393,9 +1823,17 @@ function showScreen(name) {
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(`screen-${name}`).classList.add('active');
+
+  // Mobile bottom nav
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const nb = document.getElementById(`nav-${name}`);
   if (nb) nb.classList.add('active');
+
+  // Desktop sidebar
+  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+  const sb = document.getElementById(`sidebar-${name}`);
+  if (sb) sb.classList.add('active');
+
   currentScreen = name;
   if (name === 'history') loadHistory();
   if (name === 'clinic') loadSettings();
@@ -1431,7 +1869,13 @@ async function doLogout() {
 }
 
 async function afterLogin() {
+  // Show mobile nav
   document.getElementById('bottom-nav').classList.add('visible');
+
+  // Show desktop sidebar
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.style.display = 'flex';
+
   try { currentUser = await api('GET', '/api/me'); } catch {}
   showScreen('reply');
   try {
@@ -1806,6 +2250,51 @@ function switchTemplateTab(tab) {
   }
 }
 
+// ══ CSV Batch ══════════════════════════════════════════
+function previewCSV() {
+  const fileInput = document.getElementById('batch-csv-file');
+  const previewDiv = document.getElementById('csv-preview');
+  const previewTable = document.getElementById('csv-preview-table');
+  const rowCount = document.getElementById('csv-row-count');
+
+  if (!fileInput.files || !fileInput.files[0]) {
+    if (previewDiv) previewDiv.style.display = 'none';
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+
+  reader.onload = (e) => {
+    const text = e.target.result;
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+    const rows = lines.slice(1, 6); // First 5 rows
+
+    let html = '<thead><tr>';
+    headers.forEach(h => {
+      html += `<th>${escapeHtml(h)}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    rows.forEach(row => {
+      const cols = row.split(',').map(c => c.trim());
+      html += '<tr>';
+      cols.forEach(col => {
+        html += `<td>${escapeHtml(col)}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody>';
+
+    if (previewTable) previewTable.innerHTML = html;
+    if (rowCount) rowCount.textContent = lines.length - 1; // excluding header
+    if (previewDiv) previewDiv.style.display = 'block';
+  };
+
+  reader.readAsText(file, 'UTF-8');
+}
+
 async function batchGenerate() {
   const fileInput = document.getElementById('batch-csv-file');
   const templateType = document.getElementById('batch-template-type').value;
@@ -1863,7 +2352,10 @@ async function batchGenerate() {
     });
 
     resultsListDiv.innerHTML = html;
-    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Desktop: render table
+    renderBatchResultsTable(r.results);
+
     loadSubscriptionStatus();
 
   } catch (e) {
@@ -1871,6 +2363,101 @@ async function batchGenerate() {
   } finally {
     spinner.style.display = 'none';
     btnText.textContent = '일괄 생성하기';
+  }
+}
+
+function renderBatchResultsTable(results) {
+  const tbody = document.getElementById('batch-results-tbody');
+  const container = document.getElementById('batch-results-table-container');
+  const empty = document.getElementById('batch-results-empty');
+
+  if (!tbody) return;
+
+  if (!results || !results.length) {
+    if (container) container.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+
+  tbody.innerHTML = results.map((item, idx) => `
+    <tr>
+      <td>${item.index || idx + 1}</td>
+      <td>${escapeHtml(item.name || '-')}</td>
+      <td>${escapeHtml(item.phone || '-')}</td>
+      <td style="max-width: 400px; white-space: pre-wrap;">${escapeHtml(item.message.substring(0, 100))}${item.message.length > 100 ? '...' : ''}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="copyBatchMessage(\`${item.message.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">복사</button>
+      </td>
+    </tr>
+  `).join('');
+
+  if (container) container.style.display = 'block';
+  if (empty) empty.style.display = 'none';
+}
+
+async function batchGenerateMobile() {
+  // Wrapper for mobile - use mobile-specific IDs
+  const fileInput = document.getElementById('batch-csv-file-mobile');
+  const templateType = document.getElementById('batch-template-type-mobile').value;
+  const sendSms = document.getElementById('batch-send-sms-mobile').checked;
+  const spinner = document.getElementById('batch-spinner-mobile');
+
+  if (!fileInput.files || !fileInput.files[0]) {
+    alert('CSV 파일을 선택해주세요');
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('template_type', templateType);
+  formData.append('send_sms', sendSms);
+
+  spinner.style.display = '';
+
+  try {
+    const r = await api('POST', '/api/template/batch-generate', formData, true);
+
+    if (!r || !r.results) {
+      throw new Error('생성 실패');
+    }
+
+    const resultsDiv = document.getElementById('batch-results');
+    const resultsListDiv = document.getElementById('batch-results-list');
+
+    resultsDiv.style.display = '';
+    let html = '';
+
+    if (r.sms && r.sms.success > 0) {
+      html += `<div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; margin-bottom: 16px; font-size: 14px; color: #166534;">
+        ✅ SMS 발송 완료: ${r.sms.success}건 성공, ${r.sms.failed}건 실패
+      </div>`;
+    }
+
+    r.results.forEach(item => {
+      const phoneDisplay = item.phone || '전화번호 없음';
+      html += `
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+            <div>
+              <strong style="font-size: 15px;">${item.index}. ${item.name}</strong>
+              <div style="font-size: 13px; color: var(--text2); margin-top: 4px;">${phoneDisplay}</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="copyBatchMessage(\`${item.message.replace(/`/g, '\\`')}\`)">복사</button>
+          </div>
+          <div style="background: var(--card2); padding: 12px; border-radius: 6px; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${item.message}</div>
+        </div>
+      `;
+    });
+
+    resultsListDiv.innerHTML = html;
+    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    loadSubscriptionStatus();
+
+  } catch (e) {
+    alert('오류: ' + (e.message || '일괄 생성 실패'));
+  } finally {
+    spinner.style.display = 'none';
   }
 }
 
@@ -1884,23 +2471,59 @@ let _historyCache = [];
 
 function setHistoryFilter(type) {
   _historyFilter = type;
-  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('filter-' + type).classList.add('active');
+  // Update mobile filter tabs
+  document.querySelectorAll('#screen-history .mobile-only .filter-tab').forEach(t => t.classList.remove('active'));
+  const mobileTab = document.getElementById('filter-' + type);
+  if (mobileTab) mobileTab.classList.add('active');
+
+  // Update desktop filter tabs
+  document.querySelectorAll('#screen-history .desktop-only .filter-tab').forEach(t => t.classList.remove('active'));
+  const desktopTab = document.getElementById('filter-' + type + '-desktop');
+  if (desktopTab) desktopTab.classList.add('active');
+
   renderHistoryList();
 }
 
 function renderHistoryList() {
-  const listEl = document.getElementById('history-list');
-  const filtered = _historyFilter === 'all'
-    ? _historyCache
-    : _historyCache.filter(item => item._type === _historyFilter);
+  // Apply search filter
+  const searchTerm = document.getElementById('history-search')?.value.toLowerCase() || '';
+  let filtered = _historyCache.filter(item => {
+    if (!searchTerm) return true;
+    const original = (item.original_text || '').toLowerCase();
+    const result = (item.reply_text || item.output_text || '').toLowerCase();
+    return original.includes(searchTerm) || result.includes(searchTerm);
+  });
 
-  if (!filtered.length) {
-    listEl.innerHTML = '<div class="empty-state"><div class="emoji">📋</div>해당하는 이력이 없습니다</div>';
+  // Apply type filter
+  if (_historyFilter !== 'all') {
+    filtered = filtered.filter(item => item._type === _historyFilter);
+  }
+
+  // Apply sorting
+  const sortBy = document.getElementById('history-sort')?.value || 'date_desc';
+  if (sortBy === 'date_asc') {
+    filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  } else {
+    filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+
+  // Render mobile cards
+  renderHistoryCards(filtered);
+
+  // Render desktop table
+  renderHistoryTable(filtered);
+}
+
+function renderHistoryCards(items) {
+  const cardsEl = document.getElementById('history-cards');
+  if (!cardsEl) return;
+
+  if (!items.length) {
+    cardsEl.innerHTML = '<div class="empty-state"><div class="emoji">📋</div>해당하는 이력이 없습니다</div>';
     return;
   }
 
-  listEl.innerHTML = filtered.map(item => {
+  cardsEl.innerHTML = items.map(item => {
     const date = item.created_at ? item.created_at.substring(0, 16) : '';
     if (item._type === 'review') {
       const stars = item.rating ? '★'.repeat(item.rating) + '☆'.repeat(5 - item.rating) : '';
@@ -1936,15 +2559,62 @@ function renderHistoryList() {
       </div>`;
     }
   }).join('');
-  // 복사 버튼 이벤트 위임
-  listEl.querySelectorAll('.copy-btn').forEach(btn => {
+
+  // 복사 버튼 이벤트
+  cardsEl.querySelectorAll('.copy-btn').forEach(btn => {
     btn.addEventListener('click', () => copyText(btn.dataset.text));
   });
 }
 
+function renderHistoryTable(items) {
+  const tbody = document.getElementById('history-table-body');
+  if (!tbody) return;
+
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:48px;color:var(--text2)">해당하는 이력이 없습니다</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = items.map(item => {
+    const type = item._type === 'review' ? 'review' : 'template';
+    const typeLabel = type === 'review' ? '리뷰' : '문자';
+    const result = item.reply_text || item.output_text || '';
+    const original = item.original_text || Object.values(item.params || {}).filter(Boolean).join(' · ') || '-';
+    const date = new Date(item.created_at).toLocaleString('ko-KR', {
+      month: 'numeric', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+
+    return `
+      <tr>
+        <td><span class="type-badge ${type}">${typeLabel}</span></td>
+        <td>${date}</td>
+        <td>${escapeHtml(original.substring(0, 50))}${original.length > 50 ? '...' : ''}</td>
+        <td>${escapeHtml(result.substring(0, 80))}${result.length > 80 ? '...' : ''}</td>
+        <td>${result.length}자</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="copyText(\`${result.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">복사</button>
+          <button class="btn btn-danger btn-sm" onclick="${type === 'review' ? 'deleteReview' : 'deleteTemplate'}(${item.id}, this)">삭제</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterHistory() {
+  renderHistoryList();
+}
+
+function sortHistory() {
+  renderHistoryList();
+}
+
 async function loadHistory() {
-  const listEl = document.getElementById('history-list');
-  listEl.innerHTML = '<div class="empty-state"><div class="emoji">⏳</div>불러오는 중...</div>';
+  const cardsEl = document.getElementById('history-cards');
+  const tbody = document.getElementById('history-table-body');
+  if (cardsEl) cardsEl.innerHTML = '<div class="empty-state"><div class="emoji">⏳</div>불러오는 중...</div>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:48px;color:var(--text2)">⏳ 불러오는 중...</td></tr>';
+
   try {
     const [reviewRes, tmplRes] = await Promise.all([
       api('GET', '/api/reviews?limit=50'),
@@ -1957,7 +2627,8 @@ async function loadHistory() {
     );
     renderHistoryList();
   } catch (e) {
-    listEl.innerHTML = `<div class="empty-state"><div class="emoji">❌</div>${e.message}</div>`;
+    if (cardsEl) cardsEl.innerHTML = `<div class="empty-state"><div class="emoji">❌</div>${e.message}</div>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:48px;color:var(--text2)">❌ ${e.message}</td></tr>`;
   }
 }
 
