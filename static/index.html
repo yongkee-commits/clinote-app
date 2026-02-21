@@ -1880,9 +1880,11 @@ async function afterLogin() {
   // Show mobile nav
   document.getElementById('bottom-nav').classList.add('visible');
 
-  // Show desktop sidebar
+  // Show desktop sidebar (only on desktop)
   const sidebar = document.getElementById('sidebar');
-  if (sidebar) sidebar.style.display = 'flex';
+  if (sidebar && window.innerWidth >= 1024) {
+    sidebar.style.display = 'flex';
+  }
 
   try { currentUser = await api('GET', '/api/me'); } catch {}
   showScreen('reply');
