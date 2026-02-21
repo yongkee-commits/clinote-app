@@ -587,15 +587,12 @@ textarea { resize: vertical; min-height: 80px; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
   </div>
+  <!-- 탭 -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" id="tmpl-tab-single" onclick="switchTemplateTab('single')">개별 생성</button>
+    <button class="filter-tab" id="tmpl-tab-batch" onclick="switchTemplateTab('batch')">일괄 생성 (CSV)</button>
+  </div>
   <div class="scroll-area">
-    <p class="settings-header">환자 안내문, 공지, SNS 캡션을 AI로 빠르게 생성하세요.</p>
-
-    <!-- 탭 -->
-    <div class="filter-tabs">
-      <button class="filter-tab active" id="tmpl-tab-single" onclick="switchTemplateTab('single')">개별 생성</button>
-      <button class="filter-tab" id="tmpl-tab-batch" onclick="switchTemplateTab('batch')">일괄 생성 (CSV)</button>
-    </div>
-
     <!-- 개별 생성 탭 -->
     <div id="tmpl-single-tab">
     <div class="section-title">유형 선택</div>
