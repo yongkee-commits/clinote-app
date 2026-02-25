@@ -7,10 +7,18 @@ from src.config import DB_PATH
 
 
 def init_db():
+    """데이터베이스 초기화 (테이블 생성 + 보안 설정)"""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(str(DB_PATH)) as conn:
         conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA foreign_keys=ON")
+
+        # 보안: DB 파일 권한 설정 (owner만 읽기/쓰기 가능)
+        try:
+            import os
+            os.chmod(str(DB_PATH), 0o600)
+        except Exception:
+            pass
 
         # ── users ─────────────────────────────────────────
         conn.execute("""
@@ -33,6 +41,25 @@ def init_db():
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_sessions_kakao ON sessions(kakao_id)"
         )
+
+        # ── audit_logs (감사 로그) ────────────────────────
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp    TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+                user_id      TEXT,
+                action       TEXT NOT NULL,
+                resource     TEXT,
+                resource_id  TEXT,
+                ip_address   TEXT,
+                user_agent   TEXT,
+                status       TEXT DEFAULT 'success',
+                details      TEXT
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_logs(timestamp)")
 
         # ── clinic ────────────────────────────────────────
         # 기존 단일테넌트 스키마(id=1 패턴)면 DROP & REBUILD
