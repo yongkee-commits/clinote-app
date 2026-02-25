@@ -61,12 +61,12 @@ class AuditLogger:
                     ip_address   TEXT,
                     user_agent   TEXT,
                     status       TEXT DEFAULT 'success',
-                    details      TEXT,
-                    INDEX idx_audit_user (user_id),
-                    INDEX idx_audit_action (action),
-                    INDEX idx_audit_timestamp (timestamp)
+                    details      TEXT
                 )
             """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_logs(timestamp)")
             conn.commit()
 
     @staticmethod
